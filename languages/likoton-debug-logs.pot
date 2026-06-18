@@ -1,0 +1,198 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LiKoToN Debug Logs 1.0.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+
+#: includes/class-ldl-admin.php
+msgid "Bookmark menu"
+msgstr ""
+
+#: likoton-wp-debug.php
+msgid "Logs"
+msgstr ""
+
+#: likoton-wp-debug.php
+msgid "Settings"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Search logs…"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "All levels"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 20"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 50"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 100"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 200"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 500"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Last 1000"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "All logs"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Level"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Source"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Message"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Date"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "No logs found."
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Delete all logs"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Export logs (CSV)"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Dark mode"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Enable dark mode for logs pages"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Capability"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Minimum capability required to view logs."
+msgstr ""
+
+#: includes/class-ldl-logger.php
+msgid "User \"%s\" (ID %d) logged in."
+msgstr ""
+
+#: includes/class-ldl-logger.php
+msgid "%s in %s:%d"
+msgstr ""
+
+#: includes/class-ldl-logger.php
+msgid "%s: %s"
+msgstr ""
+
+#: includes/class-ldl-logger.php
+msgid "REST %s %s"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "All sources"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "All logs deleted."
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "All logs deleted."
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Log retention"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Every 30 minutes"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Every hour"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "30 minutes"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "1 hour"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "12 hours"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "1 day"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "1 week"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "2 weeks"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "1 month"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Administrator (full access)"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Editor (can edit posts)"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Moderator (can list users)"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Saved"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Donation"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "If you like what I do, please consider a small donation to support further development."
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Thank you!"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "WP-Cron is disabled. Log cleanup will not run automatically."
+msgstr ""

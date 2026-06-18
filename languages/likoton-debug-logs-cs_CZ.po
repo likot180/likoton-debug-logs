@@ -1,0 +1,153 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LiKoToN Debug Logs 1.0.0\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+msgid "Bookmark menu"
+msgstr "Nabídka záložek"
+
+msgid "Logs"
+msgstr "Záznamy"
+
+msgid "Settings"
+msgstr "Nastavení"
+
+msgid "Search logs…"
+msgstr "Hledat v záznamech…"
+
+msgid "All levels"
+msgstr "Všechny úrovně"
+
+msgid "Last 20"
+msgstr "Posledních 20"
+
+msgid "Last 50"
+msgstr "Posledních 50"
+
+msgid "Last 100"
+msgstr "Posledních 100"
+
+msgid "Last 200"
+msgstr "Posledních 200"
+
+msgid "Last 500"
+msgstr "Posledních 500"
+
+msgid "Last 1000"
+msgstr "Posledních 1000"
+
+msgid "All logs"
+msgstr "Všechny záznamy"
+
+msgid "Level"
+msgstr "Úroveň"
+
+msgid "Source"
+msgstr "Zdroj"
+
+msgid "Message"
+msgstr "Zpráva"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "No logs found."
+msgstr "Nebyly nalezeny žádné záznamy."
+
+msgid "Delete all logs"
+msgstr "Smazat všechny záznamy"
+
+msgid "Export logs (CSV)"
+msgstr "Exportovat záznamy (CSV)"
+
+msgid "Dark mode"
+msgstr "Tmavý režim"
+
+msgid "Enable dark mode for logs pages"
+msgstr "Povolit tmavý režim pro stránky se záznamy"
+
+msgid "Capability"
+msgstr "Oprávnění"
+
+msgid "Minimum capability required to view logs."
+msgstr "Minimální oprávnění pro zobrazení záznamů."
+
+msgid "User \"%s\" (ID %d) logged in."
+msgstr "Uživatel „%s“ (ID %d) se přihlásil."
+
+msgid "%s in %s:%d"
+msgstr "%s v %s:%d"
+
+msgid "%s: %s"
+msgstr "%s: %s"
+
+msgid "REST %s %s"
+msgstr "REST %s %s"
+
+msgid "All sources"
+msgstr "Všechny zdroje"
+
+msgid "All logs deleted."
+msgstr "Všechny záznamy byly smazány."
+
+msgid "Log retention"
+msgstr "Uchovávání záznamů"
+
+msgid "Every 30 minutes"
+msgstr "Každých 30 minut"
+
+msgid "Every hour"
+msgstr "Každou hodinu"
+
+msgid "30 minutes"
+msgstr "30 minut"
+
+msgid "1 hour"
+msgstr "1 hodina"
+
+msgid "12 hours"
+msgstr "12 hodin"
+
+msgid "1 day"
+msgstr "1 den"
+
+msgid "1 week"
+msgstr "1 týden"
+
+msgid "2 weeks"
+msgstr "2 týdny"
+
+msgid "1 month"
+msgstr "1 měsíc"
+
+msgid "Administrator (full access)"
+msgstr "Administrátor (plný přístup)"
+
+msgid "Editor (can edit posts)"
+msgstr "Editor (může upravovat příspěvky)"
+
+msgid "Moderator (can list users)"
+msgstr "Moderátor (může zobrazit seznam uživatelů)"
+
+msgid "Saved"
+msgstr "Uloženo"
+
+msgid "Donation"
+msgstr "Dar"
+
+msgid "If you like what I do, please consider a small donation to support further development."
+msgstr "Pokud se vám moje práce líbí, zvažte prosím malý dar na podporu dalšího vývoje."
+
+msgid "Thank you!"
+msgstr "Děkuji!"
+
+msgid "WP-Cron is disabled. Log cleanup will not run automatically."
+msgstr "WP-Cron je vypnutý. Automatické čištění logů nebude fungovat."

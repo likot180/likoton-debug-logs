@@ -1,0 +1,153 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LiKoToN Debug Logs 1.0.0\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+msgid "Bookmark menu"
+msgstr "Lesezeichen-Menü"
+
+msgid "Logs"
+msgstr "Protokolle"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Search logs…"
+msgstr "Protokolle durchsuchen…"
+
+msgid "All levels"
+msgstr "Alle Ebenen"
+
+msgid "Last 20"
+msgstr "Letzte 20"
+
+msgid "Last 50"
+msgstr "Letzte 50"
+
+msgid "Last 100"
+msgstr "Letzte 100"
+
+msgid "Last 200"
+msgstr "Letzte 200"
+
+msgid "Last 500"
+msgstr "Letzte 500"
+
+msgid "Last 1000"
+msgstr "Letzte 1000"
+
+msgid "All logs"
+msgstr "Alle Protokolle"
+
+msgid "Level"
+msgstr "Ebene"
+
+msgid "Source"
+msgstr "Quelle"
+
+msgid "Message"
+msgstr "Nachricht"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "No logs found."
+msgstr "Keine Protokolle gefunden."
+
+msgid "Delete all logs"
+msgstr "Alle Protokolle löschen"
+
+msgid "Export logs (CSV)"
+msgstr "Protokolle exportieren (CSV)"
+
+msgid "Dark mode"
+msgstr "Dunkelmodus"
+
+msgid "Enable dark mode for logs pages"
+msgstr "Dunkelmodus für Protokollseiten aktivieren"
+
+msgid "Capability"
+msgstr "Berechtigung"
+
+msgid "Minimum capability required to view logs."
+msgstr "Minimale Berechtigung zum Anzeigen der Protokolle."
+
+msgid "User \"%s\" (ID %d) logged in."
+msgstr "Benutzer „%s“ (ID %d) hat sich angemeldet."
+
+msgid "%s in %s:%d"
+msgstr "%s in %s:%d"
+
+msgid "%s: %s"
+msgstr "%s: %s"
+
+msgid "REST %s %s"
+msgstr "REST %s %s"
+
+msgid "All sources"
+msgstr "Alle Quellen"
+
+msgid "All logs deleted."
+msgstr "Alle Protokolle gelöscht."
+
+msgid "Log retention"
+msgstr "Protokollaufbewahrung"
+
+msgid "Every 30 minutes"
+msgstr "Alle 30 Minuten"
+
+msgid "Every hour"
+msgstr "Jede Stunde"
+
+msgid "30 minutes"
+msgstr "30 Minuten"
+
+msgid "1 hour"
+msgstr "1 Stunde"
+
+msgid "12 hours"
+msgstr "12 Stunden"
+
+msgid "1 day"
+msgstr "1 Tag"
+
+msgid "1 week"
+msgstr "1 Woche"
+
+msgid "2 weeks"
+msgstr "2 Wochen"
+
+msgid "1 month"
+msgstr "1 Monat"
+
+msgid "Administrator (full access)"
+msgstr "Administrator (voller Zugriff)"
+
+msgid "Editor (can edit posts)"
+msgstr "Redakteur (kann Beiträge bearbeiten)"
+
+msgid "Moderator (can list users)"
+msgstr "Moderator (kann Benutzer auflisten)"
+
+msgid "Saved"
+msgstr "Gespeichert"
+
+msgid "Donation"
+msgstr "Spende"
+
+msgid "If you like what I do, please consider a small donation to support further development."
+msgstr "Wenn Ihnen meine Arbeit gefällt, erwägen Sie bitte eine kleine Spende zur Unterstützung der weiteren Entwicklung."
+
+msgid "Thank you!"
+msgstr "Danke!"
+
+msgid "WP-Cron is disabled. Log cleanup will not run automatically."
+msgstr "WP-Cron ist deaktiviert. Die automatische Log-Bereinigung wird nicht ausgeführt."

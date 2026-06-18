@@ -1,0 +1,138 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LiKoToN Debug Logs 1.0.0\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+msgid "Bookmark menu"
+msgstr "Menu zakładek"
+
+msgid "Logs"
+msgstr "Logi"
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Search logs…"
+msgstr "Szukaj w logach…"
+
+msgid "All levels"
+msgstr "Wszystkie poziomy"
+
+msgid "Last 20"
+msgstr "Ostatnie 20"
+
+msgid "Last 50"
+msgstr "Ostatnie 50"
+
+msgid "Last 100"
+msgstr "Ostatnie 100"
+
+msgid "Last 200"
+msgstr "Ostatnie 200"
+
+msgid "Last 500"
+msgstr "Ostatnie 500"
+
+msgid "Last 1000"
+msgstr "Ostatnie 1000"
+
+msgid "All logs"
+msgstr "Wszystkie logi"
+
+msgid "Level"
+msgstr "Poziom"
+
+msgid "Source"
+msgstr "Źródło"
+
+msgid "Message"
+msgstr "Wiadomość"
+
+msgid "Date"
+msgstr "Data"
+
+msgid "No logs found."
+msgstr "Brak logów."
+
+msgid "Delete all logs"
+msgstr "Usuń wszystkie logi"
+
+msgid "Export logs (CSV)"
+msgstr "Eksportuj logi (CSV)"
+
+msgid "Dark mode"
+msgstr "Tryb ciemny"
+
+msgid "Capability"
+msgstr "Uprawnienie"
+
+msgid "Minimum capability required to view logs."
+msgstr "Minimalne uprawnienie wymagane do przeglądania logów."
+
+msgid "All sources"
+msgstr "Wszystkie źródła"
+
+msgid "All logs deleted."
+msgstr "Wszystkie logi zostały usunięte."
+
+msgid "Log retention"
+msgstr "Przechowywanie logów"
+
+msgid "Every 30 minutes"
+msgstr "Co 30 minut"
+
+msgid "Every hour"
+msgstr "Co godzinę"
+
+msgid "30 minutes"
+msgstr "30 minut"
+
+msgid "1 hour"
+msgstr "1 godzina"
+
+msgid "12 hours"
+msgstr "12 godzin"
+
+msgid "1 day"
+msgstr "1 dzień"
+
+msgid "1 week"
+msgstr "1 tydzień"
+
+msgid "2 weeks"
+msgstr "2 tygodnie"
+
+msgid "1 month"
+msgstr "1 miesiąc"
+
+msgid "Administrator (full access)"
+msgstr "Administrator (pełny dostęp)"
+
+msgid "Editor (can edit posts)"
+msgstr "Redaktor (może edytować wpisy)"
+
+msgid "Moderator (can list users)"
+msgstr "Moderator (może przeglądać użytkowników)"
+
+msgid "Saved"
+msgstr "Zapisano"
+
+msgid "Donation"
+msgstr "Wsparcie"
+
+msgid "If you like what I do, please consider a small donation to support further development."
+msgstr "Jeśli podoba Ci się to, co robię, rozważ niewielką darowiznę, aby wesprzeć dalszy rozwój."
+
+msgid "Thank you!"
+msgstr "Dziękuję!"
+
+msgid "WP-Cron is disabled. Log cleanup will not run automatically."
+msgstr "WP-Cron jest wyłączony. Automatyczne czyszczenie logów nie będzie działać."
