@@ -226,3 +226,24 @@ body[class*="ldl-donation"] {
     text-align: center;
     color: #f0f0f1;
 }
+
+/* -------------------------------------------------------------
+ * Segmented Control
+ * ------------------------------------------------------------- */
+
+ .ldl-segment {
+    background: #2c3338;
+    border-color: #3a3f45;
+    color: #f0f0f1;
+}
+
+.ldl-segment input:checked + span {
+    background: #135e96;
+    color: #fff;
+}
+
+.ldl-levels-actions .button {
+    background-color: #2271b1 !important;
+    border-color: #135e96 !important;
+    color: #fff !important;
+}

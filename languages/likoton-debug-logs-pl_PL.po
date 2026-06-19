@@ -136,3 +136,12 @@ msgstr "Dziękuję!"
 
 msgid "WP-Cron is disabled. Log cleanup will not run automatically."
 msgstr "WP-Cron jest wyłączony. Automatyczne czyszczenie logów nie będzie działać."
+
+msgid "Select all"
+msgstr "Zaznacz wszystko"
+
+msgid "Deselect all"
+msgstr "Odznacz wszystko"
+
+msgid "Log levels to record"
+msgstr "Poziomy logów do zapisywania"

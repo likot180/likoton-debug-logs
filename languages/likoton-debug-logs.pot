@@ -196,3 +196,15 @@ msgstr ""
 #: includes/class-ldl-admin.php
 msgid "WP-Cron is disabled. Log cleanup will not run automatically."
 msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Select all"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Deselect all"
+msgstr ""
+
+#: includes/class-ldl-admin.php
+msgid "Log levels to record"
+msgstr ""

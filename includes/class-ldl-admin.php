@@ -25,6 +25,19 @@ class LDL_Admin {
     }
 	
 	/**
+     * Levels
+     */
+	private static function get_all_levels() {
+		return [
+			'debug', 'info', 'notice', 'warning', 'error',
+			'critical', 'alert', 'emergency',
+			'deprecated', 'user_deprecated', 'strict', 'parse',
+			'core_error', 'core_warning', 'compile_error', 'compile_warning',
+			'recoverable_error', 'user_error', 'user_warning', 'user_notice',
+		];
+	}
+
+	/**
      * Schedules 
      */
     public static function add_schedules( $schedules ) {
@@ -56,6 +69,11 @@ class LDL_Admin {
 			? sanitize_text_field( wp_unslash( $_POST['ldl_log_retention'] ) )
 			: '1m';
 
+		$levels = isset( $_POST['ldl_enabled_levels'] )
+			? array_map( 'sanitize_text_field', (array) $_POST['ldl_enabled_levels'] )
+			: [];
+
+		update_option( 'ldl_enabled_levels', $levels );
 		update_option( 'ldl_dark_mode', $dark_mode );
 		update_option( 'ldl_capability', $capability );
 		update_option( 'ldl_log_retention', $retention );
@@ -117,7 +135,7 @@ class LDL_Admin {
         // Main menu
         add_menu_page(
             __( 'Logs', 'likoton-debug-logs' ),
-            'LiKoToN Debug Logs',
+            'LiKoToN Logs',
             $capability,
             'ldl-logs',
             [ __CLASS__, 'render_logs_page' ],
@@ -191,6 +209,7 @@ class LDL_Admin {
      */
 	public static function render_settings_page() {
 
+		$enabled_levels = get_option( 'ldl_enabled_levels', [] );
 		if ( isset( $_POST['ldl_settings_action'] ) && check_admin_referer( 'ldl_save_settings' ) ) {
 
 			$dark_mode  = isset( $_POST['ldl_dark_mode'] ) ? 1 : 0;
@@ -267,7 +286,39 @@ class LDL_Admin {
 						</td>
 					</tr>
 
-                    <!-- Capability -->
+                    <!-- Segmented Control -->
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Log levels to record', 'likoton-debug-logs' ); ?></th>
+						<td>
+							<div class="ldl-levels-control">
+
+								<div class="ldl-levels-actions">
+									<button type="button" class="button button-secondary ldl-select-all">
+										<?php esc_html_e( 'Select all', 'likoton-debug-logs' ); ?>
+									</button>
+
+									<button type="button" class="button button-secondary ldl-deselect-all">
+										<?php esc_html_e( 'Deselect all', 'likoton-debug-logs' ); ?>
+									</button>
+								</div>
+
+
+								<div class="ldl-segmented">
+									<?php foreach ( self::get_all_levels() as $lvl ) : ?>
+										<label class="ldl-segment">
+											<input type="checkbox"
+												name="ldl_enabled_levels[]"
+												value="<?php echo esc_attr( $lvl ); ?>"
+												<?php checked( in_array( $lvl, $enabled_levels, true ) ); ?> />
+											<span><?php echo esc_html( self::format_level( $lvl ) ); ?></span>
+										</label>
+									<?php endforeach; ?>
+								</div>
+							</div>
+						</td>
+					</tr>
+										
+					<!-- Capability -->
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Capability', 'likoton-debug-logs' ); ?></th>
                         <td>
@@ -465,13 +516,7 @@ class LDL_Admin {
                 <select name="level">
                     <option value=""><?php esc_html_e( 'All levels', 'likoton-debug-logs' ); ?></option>
                     <?php
-                    $levels = [
-                        'debug', 'info', 'notice', 'warning', 'error',
-                        'critical', 'alert', 'emergency',
-                        'deprecated', 'user_deprecated', 'strict', 'parse',
-                        'core_error', 'core_warning', 'compile_error', 'compile_warning',
-                        'recoverable_error', 'user_error', 'user_warning', 'user_notice',
-                    ];
+                	$levels = get_option( 'ldl_enabled_levels', self::get_all_levels() );
                     foreach ( $levels as $lvl ) :
                         ?>
                         <option value="<?php echo esc_attr( $lvl ); ?>" <?php selected( $level, $lvl ); ?>>

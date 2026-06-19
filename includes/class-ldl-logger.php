@@ -29,16 +29,22 @@ class LDL_Logger {
 
     protected static function insert_log( $level, $source, $message, $context = null ) {
         global $wpdb;
-
-        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
-
+        
         $level = strtolower( $level );
+
+        $enabled = get_option( 'ldl_enabled_levels', [] );
+
+        if ( ! in_array( $level, $enabled, true ) ) {
+            return;
+        }
 
         if ( ! in_array( $level, self::$psr_levels, true ) ) {
             if ( ! preg_match( '/^(user_|core_|compile_|recoverable_|php|deprecated|strict|parse)/', $level ) ) {
                 $level = 'info';
             }
         }
+
+        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
 
         $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
         $user_id = get_current_user_id() ?: null;

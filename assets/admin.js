@@ -1,13 +1,12 @@
 (function ($) {
 
     $(document).ready(function () {
-		
-		let pageIsAlive = true;
 
-		window.addEventListener('beforeunload', () => {
-			pageIsAlive = false;
-		});
+        let pageIsAlive = true;
 
+        window.addEventListener('beforeunload', () => {
+            pageIsAlive = false;
+        });
 
         /* 1. AJAX table reload on filter change */
 
@@ -18,17 +17,18 @@
             const data = $filters.serialize();
 
             $.get(url, data, function (html) {
-				if (!pageIsAlive) return;
+                if (!pageIsAlive) return;
 
-				const $newTable = $(html).find('#ldl-logs-table');
-				if ($newTable.length) {
-					$('#ldl-logs-table').replaceWith($newTable);
-				}
-			});
+                const $newTable = $(html).find('#ldl-logs-table');
+                if ($newTable.length) {
+                    $('#ldl-logs-table').replaceWith($newTable);
+                }
+            });
         }
 
         if ($filters.length) {
             let timer = null;
+
             $filters.on('input', 'input[type="search"]', function () {
                 clearTimeout(timer);
                 timer = setTimeout(reloadTable, 250);
@@ -38,7 +38,6 @@
                 reloadTable();
             });
         }
-
 
         /* 2. Auto-save settings (AJAX) */
 
@@ -50,26 +49,22 @@
 
             function saveSettings(callback) {
                 const data = $settingsForm.serializeArray();
-
                 data.push({ name: 'action', value: 'ldl_save_settings' });
 
-				$.post(ajaxUrl, data, function () {
-					if (!pageIsAlive) return;
-
-					if (typeof callback === 'function') {
-						callback();
-					}
-				});
+                $.post(ajaxUrl, data, function () {
+                    if (!pageIsAlive) return;
+                    if (typeof callback === 'function') callback();
+                });
             }
 
             // capability + log retention
             $settingsForm.on('change', '#ldl_capability', function () {
-				saveSettings(showToast);
-			});
+                saveSettings(showToast);
+            });
 
-			$settingsForm.on('change', 'select[name="ldl_log_retention"]:not([disabled])', function () {
-				saveSettings(showToast);
-			});
+            $settingsForm.on('change', 'select[name="ldl_log_retention"]:not([disabled])', function () {
+                saveSettings(showToast);
+            });
 
             // dark mode → autosave + reload
             $settingsForm.on('change', '#ldl_dark_mode', function () {
@@ -77,8 +72,20 @@
                     location.reload();
                 });
             });
-        }
 
+            /* Segmented Control — auto save */
+            $(document).on('change', '.ldl-segment input', function () {
+                saveSettings(showToast);
+            });
+
+            $(document).on('click', '.ldl-select-all', function () {
+                $('.ldl-segment input').prop('checked', true).trigger('change');
+            });
+
+            $(document).on('click', '.ldl-deselect-all', function () {
+                $('.ldl-segment input').prop('checked', false).trigger('change');
+            });
+        }
 
         /* 3. Table sorting */
 
@@ -103,7 +110,6 @@
             });
         });
 
-
         /* 4. Default sort by Date column */
 
         const $dateHeader = $('#ldl-logs-table th.column-date');
@@ -123,50 +129,48 @@
                 $tbody.append(row);
             });
         }
-		
-        /* 5. Notice fo autosave */
-		function showToast() {
-			const $toast = $('#ldl-toast');
-			$toast.addClass('show').show();
 
-			setTimeout(() => {
-				$toast.removeClass('show');
-				setTimeout(() => $toast.hide(), 250);
-			}, 1800);
-		}
-		
-		/* 6. Clear search field (X button) */
+        /* 5. Notice for autosave */
+        function showToast() {
+            const $toast = $('#ldl-toast');
+            $toast.addClass('show').show();
 
-		function initClearSearch() {
-			const $wrapper = $('.ldl-search-wrapper');
-			const $input = $wrapper.find('input[type="search"]');
-			const $clear = $wrapper.find('.ldl-clear-search');
+            setTimeout(() => {
+                $toast.removeClass('show');
+                setTimeout(() => $toast.hide(), 250);
+            }, 1800);
+        }
 
-			function toggleClear() {
-				if ($input.val().length > 0) {
-					$clear.show();
-				} else {
-					$clear.hide();
-				}
-			}
+        /* 6. Clear search field (X button) */
 
-			$input.on('input', toggleClear);
+        function initClearSearch() {
+            const $wrapper = $('.ldl-search-wrapper');
+            const $input = $wrapper.find('input[type="search"]');
+            const $clear = $wrapper.find('.ldl-clear-search');
 
-			$clear.on('click', function () {
-				$input.val('');
-				$clear.hide();
-				$input.trigger('input').trigger('change');
-			});
+            $input.off('input');
+            $clear.off('click');
 
-			toggleClear();
-		}
+            function toggleClear() {
+                $clear.toggle($input.val().length > 0);
+            }
 
-		initClearSearch();
+            $input.on('input', toggleClear);
 
-		/* Re-init after AJAX table reload */
-		$(document).ajaxComplete(function () {
-			initClearSearch();
-		});
+            $clear.on('click', function () {
+                $input.val('');
+                toggleClear();
+                $input.trigger('input').trigger('change');
+            });
+
+            toggleClear();
+        }
+
+        initClearSearch();
+
+        $(document).ajaxComplete(function () {
+            initClearSearch();
+        });
 
     });
 
