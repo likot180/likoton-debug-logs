@@ -1,6 +1,4 @@
-/* -------------------------------------------------------------
- * WordPress 7 Toggle
- * ------------------------------------------------------------- */
+/* WordPress 7 Toggle */
 
 .components-form-toggle {
     position: relative;
@@ -44,9 +42,7 @@
     transform: translateX(18px);
 }
 
-/* -------------------------------------------------------------
- * Light mode select fixes
- * ------------------------------------------------------------- */
+/* Light mode select fixes */
 
 .ldl-filters select,
 .ldl-filters input[type="search"] {
@@ -77,9 +73,7 @@
     box-sizing: border-box;
 }
 
-/* -------------------------------------------------------------
- * Badge colors (levels + sources)
- * ------------------------------------------------------------- */
+/* Badge colors (levels + sources) */
 
 .ldl-badge {
     display: inline-block;
@@ -121,9 +115,7 @@
 .ldl-source-rest_api { background:#6f42c1; }
 .ldl-source-login    { background:#10b981; }
 
-/* -------------------------------------------------------------
- * Table logs
- * ------------------------------------------------------------- */
+/* Table logs */
 
 #ldl-logs-table {
 	border-radius: 2px;
@@ -132,7 +124,12 @@
 }
 
 .ldl-logs-wrapper {
+    max-height: 60vh;
+    overflow-y: auto;
     overflow-x: auto;
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 /* Search field with clear button */
@@ -165,9 +162,7 @@
     color: #000;
 }
 
-/* -------------------------------------------------------------
- * Table header sorting indicators
- * ------------------------------------------------------------- */
+/* Table header sorting indicators */
 
 /* Cursor pointer on hover */
 #ldl-logs-table th {
@@ -198,9 +193,7 @@
     font-size: 10px;
 }
 
-/* -------------------------------------------------------------
- * Column widths
- * ------------------------------------------------------------- */
+/* Column widths */
 .ldl-logs .column-id {
     width: 60px;
     text-align: left;
@@ -224,9 +217,7 @@
     text-align: center;
 }
 
-/* -------------------------------------------------------------
- * Forms
- * ------------------------------------------------------------- */
+/* Forms */
 .ldl-actions {
     display: flex;
     gap: 10px;
@@ -237,9 +228,7 @@
     margin: 0;
 }
 
-/* -------------------------------------------------------------
- * Notice
- * ------------------------------------------------------------- */
+/* Notic */
 .ldl-toast {
     position: fixed;
     bottom: 24px;
@@ -261,9 +250,7 @@
     transform: translateY(0);
 }
 
-/* -------------------------------------------------------------
- * WP7 NAV
- * ------------------------------------------------------------- */
+/*WP7 NAV*/
 
 .wrap h1 {
 	padding-bottom:32px;
@@ -296,9 +283,7 @@
     display: flex;
 }
 
-/* -------------------------------------------------------------
- * Donation page
- * ------------------------------------------------------------- */
+/* Donation page*/
 .ldl-donation {
 	text-align: center;
 	font-weight: 600;
@@ -373,6 +358,32 @@
     text-align: center;
 }
 
+/* Go to top button */
+.ldl-go-top {
+    position: sticky;
+    bottom: 10px;
+    margin-left: auto;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: #2271b1;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0;
+    transition: opacity .25s ease, transform .15s ease;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    align-self: flex-end;
+}
+
+.ldl-go-top:hover {
+    transform: scale(1.05);
+}
 
 /* Mobile breakpoint */
 @media (max-width: 600px) {
