@@ -2,7 +2,7 @@
 
 A lightweight, modern debugging plugin for WordPress that automatically collects PHP errors, WordPress errors, REST API calls, and user login events.  
 
-Includes a clean log viewer with filters, sorting, dark mode, CSV export, and automatic cleanup.
+Includes a clean log viewer with filters, sorting, dark mode, infinite scroll, CSV export, and automatic cleanup.
 
 ---
 
@@ -13,10 +13,11 @@ Includes a clean log viewer with filters, sorting, dark mode, CSV export, and au
 - WordPress errors (`wp_error_added`)  
 - REST API requests (route, method, params)  
 - User login events  
-- Custom logs via `LWD_Logger::log()`  
+- Custom logs via `LDL_Logger::log()`
 
 ### Logs Viewer
 - AJAX live filtering  
+- Infinite scroll  
 - Search, level, source, last X logs  
 - Client-side sorting  
 - Color-coded badges  
@@ -31,6 +32,7 @@ Includes a clean log viewer with filters, sorting, dark mode, CSV export, and au
 - Log retention (30m → 1 month)  
 - Capability required to view logs  
 - Auto-save via AJAX with toast notification  
+- Selectable log levels (only enabled levels are shown in the viewer)  
 
 ### Automatic Cleanup
 - WP-Cron based  
@@ -39,6 +41,7 @@ Includes a clean log viewer with filters, sorting, dark mode, CSV export, and au
 
 ### Export
 - Export all logs to CSV  
+- Includes `created_at_utc` and `created_at_local`  
 - Secured with nonce & capability check  
 
 ---
@@ -110,7 +113,9 @@ Yes, each site has its own logs table.
 - Initial release
 - PHP/WP/REST/login logging
 - AJAX filters
+- Infinite scroll
 - Dark mode
-- CSV export
+- CSV export (UTC + local time)
 - Automatic cleanup
 - Capability control
+- Selectable log levels

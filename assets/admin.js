@@ -8,7 +8,29 @@
             pageIsAlive = false;
         });
 
+        const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
+
         /* 1. AJAX table reload on filter change */
+
+        function applyDefaultDateSort() {
+            const $dateHeader = $('#ldl-logs-table th.column-date');
+            if ($dateHeader.length) {
+                $dateHeader.addClass('sorted-desc sorted-column');
+
+                const $tbody = $('#ldl-logs-table tbody');
+                const rows = $tbody.find('tr').get();
+
+                rows.sort(function (a, b) {
+                    const A = $(a).children('td').eq($dateHeader.index()).text().toUpperCase();
+                    const B = $(b).children('td').eq($dateHeader.index()).text().toUpperCase();
+                    return B.localeCompare(A);
+                });
+
+                $.each(rows, function (i, row) {
+                    $tbody.append(row);
+                });
+            }
+        }
 
         const $filters = $('#ldl-filters');
 
@@ -22,6 +44,7 @@
                 const $newTable = $(html).find('#ldl-logs-table');
                 if ($newTable.length) {
                     $('#ldl-logs-table').replaceWith($newTable);
+                    applyDefaultDateSort();
                 }
             });
         }
@@ -44,8 +67,6 @@
         const $settingsForm = $('#ldl-settings-form');
 
         if ($settingsForm.length) {
-
-            const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
 
             function saveSettings(callback) {
                 const data = $settingsForm.serializeArray();
@@ -112,23 +133,7 @@
 
         /* 4. Default sort by Date column */
 
-        const $dateHeader = $('#ldl-logs-table th.column-date');
-        if ($dateHeader.length) {
-            $dateHeader.addClass('sorted-desc sorted-column');
-
-            const $tbody = $('#ldl-logs-table tbody');
-            const rows = $tbody.find('tr').get();
-
-            rows.sort(function (a, b) {
-                const A = $(a).children('td').eq($dateHeader.index()).text().toUpperCase();
-                const B = $(b).children('td').eq($dateHeader.index()).text().toUpperCase();
-                return B.localeCompare(A);
-            });
-
-            $.each(rows, function (i, row) {
-                $tbody.append(row);
-            });
-        }
+        applyDefaultDateSort();
 
         /* 5. Notice for autosave */
         function showToast() {
@@ -170,16 +175,18 @@
 
         $(document).ajaxComplete(function () {
             initClearSearch();
+            applyDefaultDateSort();
         });
 
         /* -------------------------------------------------------------
-        * 7. Go to top button inside table scroll
+        * 7 + 8. Go to top + Infinite scroll inside .ldl-logs-wrapper
         * ------------------------------------------------------------- */
 
         const $wrapper = $('.ldl-logs-wrapper');
 
         if ($wrapper.length) {
 
+            /* Go to top button */
             const $btnTop = $('<div class="ldl-go-top">↑</div>');
             $wrapper.append($btnTop);
 
@@ -194,7 +201,69 @@
             $btnTop.on('click', function () {
                 $wrapper.animate({ scrollTop: 0 }, 300);
             });
+
+            /* Infinite scroll */
+            let page = 1;
+            let loading = false;
+            let done = false;
+
+            const $loader = $('<div class="ldl-scroll-loader">Loading…</div>').css({
+                padding: '15px',
+                textAlign: 'center',
+                color: '#666',
+                opacity: 0,
+                transition: 'opacity .25s ease'
+            });
+
+            $wrapper.append($loader);
+
+            function loadMore() {
+                if (loading || done) return;
+
+                const $tableBody = $('#ldl-logs-table tbody');
+                if (!$tableBody.length) return;
+
+                loading = true;
+                $loader.css('opacity', 1);
+
+                const params = new URLSearchParams(window.location.search);
+
+                $.get(ajaxUrl, {
+                    action: 'ldl_load_more_logs',
+                    page_num: page + 1,
+                    s: params.get('s') || '',
+                    level: params.get('level') || '',
+                    source: params.get('source') || '',
+                    last: params.get('last') || 50
+                }, function (response) {
+
+                    if (response.success) {
+
+                        if (response.data.done) {
+                            done = true;
+                            $loader.text('✔ All logs loaded');
+                            return;
+                        }
+
+                        page++;
+                        $tableBody.append(response.data.html);
+                    }
+
+                }).always(function () {
+                    loading = false;
+                    $loader.css('opacity', 0);
+                });
+            }
+
+            $wrapper.on('scroll', function () {
+                const scrollBottom = this.scrollHeight - this.scrollTop - this.clientHeight;
+
+                if (scrollBottom < 150) {
+                    loadMore();
+                }
+            });
         }
+
     });
 
 })(jQuery);

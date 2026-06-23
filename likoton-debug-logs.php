@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name: LiKoToN Debug Logs
-  * Plugin URI: https://likoton.pl
+ * Plugin URI: https://likoton.pl
  * Description: Collects and displays WordPress and PHP debug logs with filters, live view and dark mode
  * Author: Likoton
  * Version: 1.0.0
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * License: GPLv3
+ * License URI: License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
  * Text Domain: likoton-debug-logs
  */
 

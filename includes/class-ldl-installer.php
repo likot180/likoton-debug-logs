@@ -38,17 +38,17 @@ class LDL_Installer {
     public static function uninstall() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_NAME;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChangeInterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChangeInterpolatedNotPrepared
         $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
     }
-	
-	public static function get_unique_sources() {
-		global $wpdb;
-		$table = $wpdb->prefix . self::TABLE_NAME;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return $wpdb->get_col( "SELECT DISTINCT source FROM $table ORDER BY source ASC" );
-	}
+    public static function get_unique_sources() {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_NAME;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_col( "SELECT DISTINCT source FROM $table ORDER BY source ASC" );
+    }
 
     public static function get_logs( $args = [] ) {
         global $wpdb;
@@ -56,9 +56,11 @@ class LDL_Installer {
         $table = $wpdb->prefix . self::TABLE_NAME;
 
         $defaults = [
-            'search' => '',
-            'last'   => 50,
-            'level'  => '',
+            'search'   => '',
+            'level'    => '',
+            'source'   => '',
+            'page'     => 1,
+            'per_page' => 50,
         ];
         $args = wp_parse_args( $args, $defaults );
 
@@ -74,35 +76,32 @@ class LDL_Installer {
             $where   .= ' AND level = %s';
             $params[] = $args['level'];
         }
-		
-		if ( $args['source'] !== '' ) {
-			$where   .= ' AND source = %s';
-			$params[] = $args['source'];
-		}
 
+        $enabled_levels = get_option( 'ldl_enabled_levels', [] );
 
-		if ( $args['last'] === 'all' ) {
-			$limit = null;
-		} else {
-			$limit = (int) $args['last'];
-			if ( $limit <= 0 ) {
-				$limit = 50;
-			}
-		}
+        if ( $args['level'] !== '' ) {
+            $where .= ' AND level = %s';
+            $params[] = $args['level'];
+        } elseif ( ! empty( $enabled_levels ) ) {
+            $placeholders = implode( ',', array_fill( 0, count( $enabled_levels ), '%s' ) );
+            $where .= " AND level IN ($placeholders)";
+            $params = array_merge( $params, $enabled_levels );
+        }
 
-		if ( $limit === null ) {
-		
-			$sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC";
-			$prepared = $wpdb->prepare( $sql, $params );
-		} else {
-		
-			$sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d";
-			$params[] = $limit;
-			$prepared = $wpdb->prepare( $sql, $params );
-		}
+        if ( $args['source'] !== '' ) {
+            $where   .= ' AND source = %s';
+            $params[] = $args['source'];
+        }
 
-        return
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->get_results( $prepared );
+        $page     = max( 1, (int) $args['page'] );
+        $per_page = max( 1, (int) $args['per_page'] );
+        $offset   = ( $page - 1 ) * $per_page;
+
+        $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
+        $params[] = $per_page;
+        $params[] = $offset;
+
+        return $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
     }
+
 }

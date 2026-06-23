@@ -385,6 +385,12 @@
     transform: scale(1.05);
 }
 
+.ldl-scroll-loader {
+    font-size: 14px;
+    padding: 10px;
+}
+
+
 /* Mobile breakpoint */
 @media (max-width: 600px) {
     .ldl-filters {
