@@ -198,4 +198,3 @@
     });
 
 })(jQuery);
-Add UX fixes
