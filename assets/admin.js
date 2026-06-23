@@ -172,6 +172,30 @@
             initClearSearch();
         });
 
+        /* -------------------------------------------------------------
+        * 7. Go to top button inside table scroll
+        * ------------------------------------------------------------- */
+
+        const $wrapper = $('.ldl-logs-wrapper');
+
+        if ($wrapper.length) {
+
+            const $btnTop = $('<div class="ldl-go-top">↑</div>');
+            $wrapper.append($btnTop);
+
+            $wrapper.on('scroll', function () {
+                if (this.scrollTop > 200) {
+                    $btnTop.css('opacity', 1);
+                } else {
+                    $btnTop.css('opacity', 0);
+                }
+            });
+
+            $btnTop.on('click', function () {
+                $wrapper.animate({ scrollTop: 0 }, 300);
+            });
+        }
     });
 
 })(jQuery);
+Add UX fixes
