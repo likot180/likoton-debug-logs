@@ -33,6 +33,16 @@ class LDL_Installer {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
+
+        if ( get_option( 'ldl_enabled_levels', null ) === null ) {
+           update_option( 'ldl_enabled_levels', [
+                'debug', 'info', 'notice', 'warning', 'error',
+                'critical', 'alert', 'emergency',
+                'deprecated', 'user_deprecated', 'strict', 'parse',
+                'core_error', 'core_warning', 'compile_error', 'compile_warning',
+                'recoverable_error', 'user_error', 'user_warning', 'user_notice',
+            ] );
+}
     }
 
     public static function uninstall() {
