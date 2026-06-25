@@ -64,7 +64,7 @@ Includes a clean log viewer with filters, sorting, dark mode, infinite scroll, C
 
 ### Custom logs
 `php`
-`LWD_Logger::log( 'info', 'custom_source', 'Something happened', [ 'extra' => 'data' ] );`
+`LDL_Logger::log( 'info', 'custom_source', 'Something happened', [ 'extra' => 'data' ] );`
 
 Supported log levels
 PSR-3 + extended PHP levels:

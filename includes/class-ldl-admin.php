@@ -59,6 +59,9 @@ class LDL_Admin {
      * Auto-save
      */
     public static function ajax_save_settings() {
+        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+            wp_die( -1 );
+        }
         check_ajax_referer( 'ldl_save_settings', 'ldl_nonce' );
 
         $dark_mode  = isset( $_POST['ldl_dark_mode'] ) ? 1 : 0;
@@ -100,6 +103,12 @@ class LDL_Admin {
 
     /* infinite scroll */
     public static function ajax_load_more_logs() {
+
+        check_ajax_referer( 'ldl_load_more_logs', 'ldl_nonce' );
+
+        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+            wp_die( -1 );
+        }
 
         $page   = isset( $_GET['page_num'] ) ? max( 1, (int) $_GET['page_num'] ) : 1;
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -156,25 +165,30 @@ class LDL_Admin {
         $retention = get_option( 'ldl_log_retention', '1m' );
 
         switch ( $retention ) {
-            case '30m': $interval = '30 MINUTE'; break;
-            case '1h':  $interval = '1 HOUR'; break;
-            case '12h': $interval = '12 HOUR'; break;
-            case '1d':  $interval = '1 DAY'; break;
-            case '1w':  $interval = '7 DAY'; break;
-            case '2w':  $interval = '14 DAY'; break;
-            case '1m':  $interval = '30 DAY'; break;
-            default:    $interval = '30 DAY';
+            case '30m': $interval = '30 minutes'; break;
+            case '1h':  $interval = '1 hour';     break;
+            case '12h': $interval = '12 hours';   break;
+            case '1d':  $interval = '1 day';      break;
+            case '1w':  $interval = '7 days';     break;
+            case '2w':  $interval = '14 days';    break;
+            case '1m':  $interval = '30 days';    break;
+            default:    $interval = '30 days';
         }
 
         global $wpdb;
         $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $date_threshold = date_i18n( 'Y-m-d H:i:s', strtotime( "-{$interval}" ) );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->query(
-            "DELETE FROM $table WHERE created_at < (NOW() - INTERVAL $interval)"
+            $wpdb->prepare(
+                "DELETE FROM `{$table}` WHERE created_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $date_threshold
+            )
         );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query( "OPTIMIZE TABLE $table" );
+        $wpdb->query( "OPTIMIZE TABLE `{$table}`" );
     }
 
     /**
@@ -275,9 +289,15 @@ class LDL_Admin {
                 ? sanitize_text_field( wp_unslash( $_POST['ldl_log_retention'] ) )
                 : '1m';
 
+            $levels = isset( $_POST['ldl_enabled_levels'] )
+                ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['ldl_enabled_levels'] ) )
+                : [];
+
+            update_option( 'ldl_enabled_levels', $levels );
             update_option( 'ldl_dark_mode', $dark_mode );
             update_option( 'ldl_capability', $capability );
             update_option( 'ldl_log_retention', $retention );
+
         }
 
         $dark_mode  = (bool) get_option( 'ldl_dark_mode', 0 );

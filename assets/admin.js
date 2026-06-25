@@ -194,7 +194,8 @@
                     s: params.get('s') || '',
                     level: params.get('level') || '',
                     source: params.get('source') || '',
-                    last: params.get('last') || 50
+                    last: params.get('last') || 50,
+                    ldl_nonce: ldlData.nonce
                 }, function (response) {
                     if (response.success) {
                         if (response.data.done) {

@@ -105,6 +105,8 @@ class LDL_Logger {
         $route  = $request->get_route();
         $method = $request->get_method();
 
+        $param_keys = array_keys( $request->get_params() );
+
         $context = [
             'route'  => $route,
             'method' => $method,

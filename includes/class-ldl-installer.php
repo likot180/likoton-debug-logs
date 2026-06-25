@@ -42,7 +42,11 @@ class LDL_Installer {
                 'core_error', 'core_warning', 'compile_error', 'compile_warning',
                 'recoverable_error', 'user_error', 'user_warning', 'user_notice',
             ] );
-}
+        }
+    }
+
+    public static function deactivate() {
+        wp_clear_scheduled_hook( 'ldl_cleanup_logs' );
     }
 
     public static function uninstall() {
@@ -78,13 +82,13 @@ class LDL_Installer {
         $params  = [];
 
         if ( $args['search'] !== '' ) {
-            $where   .= ' AND message LIKE %s';
-            $params[] = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-        }
-
-        if ( $args['level'] !== '' ) {
-            $where   .= ' AND level = %s';
-            $params[] = $args['level'];
+            if ( ctype_digit( $args['search'] ) ) {
+                $where   .= ' AND id = %d';
+                $params[] = (int) $args['search'];
+            } else {
+                $where   .= ' AND message LIKE %s';
+                $params[] = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+            }
         }
 
         $enabled_levels = get_option( 'ldl_enabled_levels', [] );

@@ -22,7 +22,7 @@ class LDL_Assets {
 			'ldl-admin',
 			LDL_PLUGIN_URL . 'assets/admin.css',
 			[],
-			filemtime( LDL_PLUGIN_PATH . 'assets/admin.css' )
+			filemtime( LDL_PLUGIN_DIR . 'assets/admin.css' )
 		);
 
 		// CSS (dark)
@@ -31,7 +31,7 @@ class LDL_Assets {
 				'ldl-admin-dark',
 				LDL_PLUGIN_URL . 'assets/admin-dark.css',
 				[ 'ldl-admin' ],
-				filemtime( LDL_PLUGIN_PATH . 'assets/admin-dark.css' )
+				filemtime( LDL_PLUGIN_DIR . 'assets/admin-dark.css' )
 			);
 		}
 
@@ -40,8 +40,12 @@ class LDL_Assets {
 			'ldl-admin',
 			LDL_PLUGIN_URL . 'assets/admin.js',
 			[ 'jquery' ],
-			filemtime( LDL_PLUGIN_PATH . 'assets/admin.js' ),
+			filemtime( LDL_PLUGIN_DIR . 'assets/admin.js' ),
 			true
 		);
+
+		wp_localize_script( 'ldl-admin', 'ldlData', [
+			'nonce' => wp_create_nonce( 'ldl_load_more_logs' ),
+		] );
     }
 }
