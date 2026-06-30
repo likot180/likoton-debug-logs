@@ -44,12 +44,12 @@ class Likoton_Debug_Logs_Admin {
     public static function add_schedules( $schedules ) {
         $schedules['likoton_debug_logs_every_30_minutes'] = [
             'interval' => 30 * 60,
-            'display'  => __( 'Every 30 minutes', 'likoton-debug-logs' ),
+            'display'  => 'LiKoToN Debug Logs: Every 30 minutes',
         ];
 
         $schedules['likoton_debug_logs_every_hour'] = [
             'interval' => 60 * 60,
-            'display'  => __( 'Every hour', 'likoton-debug-logs' ),
+            'display'  => 'LiKoToN Debug Logs: Every hour',
         ];
 
         return $schedules;
@@ -228,7 +228,7 @@ class Likoton_Debug_Logs_Admin {
 
         // Hidden submenu: Donation
         add_submenu_page(
-            null,
+            'likoton-debug-logs-logs',
             __( 'Donation', 'likoton-debug-logs' ),
             __( 'Donation', 'likoton-debug-logs' ),
             $capability,
