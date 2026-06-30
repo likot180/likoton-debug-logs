@@ -59,22 +59,22 @@
 
             function saveSettings(callback) {
                 const data = $settingsForm.serializeArray();
-                data.push({ name: 'action', value: 'ldl_save_settings' });
+                data.push({ name: 'action', value: 'likoton_debug_logs_save_settings' });
                 $.post(ajaxUrl, data, function () {
                     if (!pageIsAlive) return;
                     if (typeof callback === 'function') callback();
                 });
             }
 
-            $settingsForm.on('change', '#ldl_capability', function () {
+            $settingsForm.on('change', '#likoton_debug_logs_capability', function () {
                 saveSettings(showToast);
             });
 
-            $settingsForm.on('change', 'select[name="ldl_log_retention"]:not([disabled])', function () {
+            $settingsForm.on('change', 'select[name="likoton_debug_logs_retention"]:not([disabled])', function () {
                 saveSettings(showToast);
             });
 
-            $settingsForm.on('change', '#ldl_dark_mode', function () {
+            $settingsForm.on('change', '#likoton_debug_logs_dark_mode', function () {
                 saveSettings(function () {
                     location.reload();
                 });
@@ -189,13 +189,13 @@
                 $loader.css('opacity', 1);
                 const params = new URLSearchParams(window.location.search);
                 $.get(ajaxUrl, {
-                    action: 'ldl_load_more_logs',
+                    action: 'likoton_debug_logs_load_more_logs',
                     page_num: page + 1,
                     s: params.get('s') || '',
                     level: params.get('level') || '',
                     source: params.get('source') || '',
                     last: params.get('last') || 50,
-                    ldl_nonce: ldlData.nonce
+                    likoton_debug_logs_nonce: likotonDebugLogsData.nonce
                 }, function (response) {
                     if (response.success) {
                         if (response.data.done) {

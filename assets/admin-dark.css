@@ -2,8 +2,8 @@
  * Dark mode background
  * ------------------------------------------------------------- */
 
-body.toplevel_page_ldl-logs,
-body.toplevel_page_ldl-settings {
+body.toplevel_page_likoton-debug-logs-logs,
+body.likoton-debug-logs-logs_page_likoton-debug-logs-settings {
     background-color: #1d2327;
     color: #f0f0f1;
 }
@@ -127,10 +127,10 @@ input[type="number"]:focus {
 }
 
 /* Apply dark mode to both pages */
-body.toplevel_page_ldl-logs,
-body.toplevel_page_ldl-settings,
-body[class*="ldl-logs"],
-body[class*="ldl-settings"] {
+body.toplevel_page_likoton-debug-logs-logs,
+body.likoton-debug-logs-logs_page_likoton-debug-logs-settings,
+body[class*="likoton-debug-logs-logs"],
+body[class*="likoton-debug-logs-settings"] {
     background-color: #1d2327 !important;
     color: #f0f0f1 !important;
 }
@@ -163,20 +163,20 @@ body[class*="ldl-settings"] {
     border-bottom: 1px solid #3a3a3a;
 }
 
-.health-check-tab {
+.health-check-tab,
+.health-check-tab:visited {
     border-bottom: none;
     color: #e0e0e0;
 }
 
-.health-check-tab.active,
-.health-check-tab[aria-current="page"] {
-    border-bottom: 1px solid #1e1e1e;
+.health-check-tab:hover {
     color: #fff;
-    font-weight: 600;
 }
 
 .health-check-tab.active,
-.health-check-tab[aria-current="page"] {
+.health-check-tab.active:visited,
+.health-check-tab[aria-current="page"],
+.health-check-tab[aria-current="page"]:visited {
     border-bottom: 1px solid #1d2327;
     color: #fff;
     font-weight: 600;
@@ -194,8 +194,8 @@ body[class*="ldl-settings"] {
  * Donation page — Dark Mode
  * ------------------------------------------------------------- */
 
-body.toplevel_page_ldl-donation,
-body[class*="ldl-donation"] {
+body.likoton-debug-logs-logs_page_likoton-debug-logs-donation,
+body[class*="likoton-debug-logs-donation"] {
     background-color: #1d2327 !important;
     color: #f0f0f1 !important;
 }

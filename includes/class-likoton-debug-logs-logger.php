@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class LDL_Logger {
+class Likoton_Debug_Logs_Logger {
 
     private static $psr_levels = [
         'emergency',
@@ -32,7 +32,7 @@ class LDL_Logger {
         
         $level = strtolower( $level );
 
-        $enabled = get_option( 'ldl_enabled_levels', [] );
+        $enabled = get_option( 'likoton_debug_logs_enabled_levels', [] );
 
         if ( ! in_array( $level, $enabled, true ) ) {
             return;
@@ -44,7 +44,7 @@ class LDL_Logger {
             }
         }
 
-        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
+        $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
         $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
         $user_id = get_current_user_id() ?: null;
@@ -105,12 +105,14 @@ class LDL_Logger {
         $route  = $request->get_route();
         $method = $request->get_method();
 
+        // Only log parameter keys, not values — values may contain passwords,
+        // tokens, or other sensitive data submitted to the REST API.
         $param_keys = array_keys( $request->get_params() );
 
         $context = [
-            'route'  => $route,
-            'method' => $method,
-            'params' => $request->get_params(),
+            'route'      => $route,
+            'method'     => $method,
+            'param_keys' => $param_keys,
         ];
 
         $msg = sprintf( 'REST %s %s', $method, $route );

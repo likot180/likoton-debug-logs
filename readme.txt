@@ -17,7 +17,7 @@ LiKoToN Debug Logs is a lightweight, modern debugging plugin for WordPress that 
 - WordPress errors (`wp_error_added`)  
 - REST API requests (route, method, params)  
 - User login events  
-- Custom logs via `LDL_Logger::log()`  
+- Custom logs via `Likoton_Debug_Logs_Logger::log()`  
 
 It includes a clean log viewer with:
 
@@ -40,7 +40,7 @@ LiKoToN Debug Logs to lekka i nowoczesna wtyczka debugująca dla WordPressa, kt�
 - błędy WordPressa (`wp_error_added`)  
 - wywołania REST API (ścieżka, metoda, parametry)  
 - logowania użytkowników  
-- własne logi przez `LDL_Logger::log()`  
+- własne logi przez `Likoton_Debug_Logs_Logger::log()`  
 
 Wtyczka oferuje czytelny panel logów z:
 
@@ -64,7 +64,7 @@ Idealna dla deweloperów i administratorów, którzy chcą mieć pełną kontrol
 - WordPress errors (`wp_error_added`)  
 - REST API requests (route, method, params)  
 - User login events  
-- Custom logs via `LDL_Logger::log()`  
+- Custom logs via `Likoton_Debug_Logs_Logger::log()`  
 
 ### Logs Viewer
 - AJAX live filtering  
@@ -122,10 +122,10 @@ likoton-debug-logs/
 │   ├── buycoffee.png  
 │   └── revolut.png  
 ├── includes/  
-│   ├── class-ldl-admin.php  
-│   ├── class-ldl-assets.php  
-│   ├── class-ldl-installer.php  
-│   └── class-ldl-logger.php  
+│   ├── class-likoton_debug_logs-admin.php  
+│   ├── class-likoton_debug_logs-assets.php  
+│   ├── class-likoton_debug_logs-installer.php  
+│   └── class-likoton_debug_logs-logger.php  
 ├── languages/  
 │   ├── likoton-debug-logs-en_US.po/mo  
 │   ├── likoton-debug-logs-pl_PL.po/mo  
@@ -138,7 +138,7 @@ likoton-debug-logs/
 
 ### Custom logs
 ```php
-LDL_Logger::log( 'info', 'custom_source', 'Something happened', [ 'extra' => 'data' ] );
+Likoton_Debug_Logs_Logger::log( 'info', 'custom_source', 'Something happened', [ 'extra' => 'data' ] );
 
 ## Supported log levels (PSR-3 + extended PHP levels):
 

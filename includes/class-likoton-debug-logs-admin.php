@@ -8,21 +8,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Admin interface for LiKoToN Debug Logs
  */
-class LDL_Admin {
+class Likoton_Debug_Logs_Admin {
 
     public static function init() {
         add_action( 'admin_menu', [ __CLASS__, 'menu' ] );
-        add_action( 'admin_post_ldl_delete_logs', [ __CLASS__, 'handle_delete_logs' ] );
-        add_action( 'admin_post_ldl_export_logs', [ __CLASS__, 'handle_export_logs' ] );
-        add_action( 'wp_ajax_ldl_save_settings', [ __CLASS__, 'ajax_save_settings' ] );
-        add_action( 'wp_ajax_ldl_load_more_logs', [ __CLASS__, 'ajax_load_more_logs' ] );
+        add_action( 'admin_post_likoton_debug_logs_delete_logs', [ __CLASS__, 'handle_delete_logs' ] );
+        add_action( 'admin_post_likoton_debug_logs_export_logs', [ __CLASS__, 'handle_export_logs' ] );
+        add_action( 'wp_ajax_likoton_debug_logs_save_settings', [ __CLASS__, 'ajax_save_settings' ] );
+        add_action( 'wp_ajax_likoton_debug_logs_load_more_logs', [ __CLASS__, 'ajax_load_more_logs' ] );
         add_filter( 'cron_schedules', [ __CLASS__, 'add_schedules' ] );
 
-        if ( ! wp_next_scheduled( 'ldl_cleanup_logs' ) ) {
-            wp_schedule_event( time(), 'daily', 'ldl_cleanup_logs' );
+        if ( ! wp_next_scheduled( 'likoton_debug_logs_cleanup_logs' ) ) {
+            wp_schedule_event( time(), 'daily', 'likoton_debug_logs_cleanup_logs' );
         }
 
-        add_action( 'ldl_cleanup_logs', [ __CLASS__, 'cleanup_logs' ] );
+        add_action( 'likoton_debug_logs_cleanup_logs', [ __CLASS__, 'cleanup_logs' ] );
     }
 
     /**
@@ -42,12 +42,12 @@ class LDL_Admin {
      * Schedules
      */
     public static function add_schedules( $schedules ) {
-        $schedules['every_30_minutes'] = [
+        $schedules['likoton_debug_logs_every_30_minutes'] = [
             'interval' => 30 * 60,
             'display'  => __( 'Every 30 minutes', 'likoton-debug-logs' ),
         ];
 
-        $schedules['every_hour'] = [
+        $schedules['likoton_debug_logs_every_hour'] = [
             'interval' => 60 * 60,
             'display'  => __( 'Every hour', 'likoton-debug-logs' ),
         ];
@@ -59,42 +59,43 @@ class LDL_Admin {
      * Auto-save
      */
     public static function ajax_save_settings() {
-        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+        check_ajax_referer( 'likoton_debug_logs_save_settings', 'likoton_debug_logs_nonce' );
+
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
             wp_die( -1 );
         }
-        check_ajax_referer( 'ldl_save_settings', 'ldl_nonce' );
 
-        $dark_mode  = isset( $_POST['ldl_dark_mode'] ) ? 1 : 0;
-        $capability = isset( $_POST['ldl_capability'] )
-            ? sanitize_text_field( wp_unslash( $_POST['ldl_capability'] ) )
+        $dark_mode  = isset( $_POST['likoton_debug_logs_dark_mode'] ) ? 1 : 0;
+        $capability = isset( $_POST['likoton_debug_logs_capability'] )
+            ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_capability'] ) )
             : 'manage_options';
 
-        $retention = isset( $_POST['ldl_log_retention'] )
-            ? sanitize_text_field( wp_unslash( $_POST['ldl_log_retention'] ) )
+        $retention = isset( $_POST['likoton_debug_logs_retention'] )
+            ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_retention'] ) )
             : '1m';
 
-            $levels = isset( $_POST['ldl_enabled_levels'] )
-                ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['ldl_enabled_levels'] ) )
+            $levels = isset( $_POST['likoton_debug_logs_enabled_levels'] )
+                ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['likoton_debug_logs_enabled_levels'] ) )
                 : [];
                 
-        update_option( 'ldl_enabled_levels', $levels );
-        update_option( 'ldl_dark_mode', $dark_mode );
-        update_option( 'ldl_capability', $capability );
-        update_option( 'ldl_log_retention', $retention );
+        update_option( 'likoton_debug_logs_enabled_levels', $levels );
+        update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
+        update_option( 'likoton_debug_logs_capability', $capability );
+        update_option( 'likoton_debug_logs_retention', $retention );
 
-        wp_clear_scheduled_hook( 'ldl_cleanup_logs' );
+        wp_clear_scheduled_hook( 'likoton_debug_logs_cleanup_logs' );
 
         switch ( $retention ) {
             case '30m':
-                wp_schedule_event( time() + 30 * 60, 'every_30_minutes', 'ldl_cleanup_logs' );
+                wp_schedule_event( time() + 30 * 60, 'likoton_debug_logs_every_30_minutes', 'likoton_debug_logs_cleanup_logs' );
                 break;
 
             case '1h':
-                wp_schedule_event( time() + 60 * 60, 'every_hour', 'ldl_cleanup_logs' );
+                wp_schedule_event( time() + 60 * 60, 'likoton_debug_logs_every_hour', 'likoton_debug_logs_cleanup_logs' );
                 break;
 
             default:
-                wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', 'ldl_cleanup_logs' );
+                wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', 'likoton_debug_logs_cleanup_logs' );
         }
 
         wp_send_json_success();
@@ -103,20 +104,17 @@ class LDL_Admin {
 
     /* infinite scroll */
     public static function ajax_load_more_logs() {
+        check_ajax_referer( 'likoton_debug_logs_load_more_logs', 'likoton_debug_logs_nonce' );
 
-        check_ajax_referer( 'ldl_load_more_logs', 'ldl_nonce' );
-
-        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
             wp_die( -1 );
         }
 
         $page   = isset( $_GET['page_num'] ) ? max( 1, (int) $_GET['page_num'] ) : 1;
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
         $level  = isset( $_GET['level'] ) ? sanitize_text_field( wp_unslash( $_GET['level'] ) ) : '';
         $source = isset( $_GET['source'] ) ? sanitize_text_field( wp_unslash( $_GET['source'] ) ) : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $last_raw = isset( $_GET['last'] ) ? $_GET['last'] : 50;
+        $last_raw = isset( $_GET['last'] ) ? sanitize_text_field( wp_unslash( $_GET['last'] ) ) : 50;
 
         if ( $last_raw === 'all' ) {
             wp_send_json_success( [ 'html' => '', 'done' => true ] );
@@ -127,7 +125,7 @@ class LDL_Admin {
             $per_page = 50;
         }
 
-        $logs = LDL_Installer::get_logs( [
+        $logs = Likoton_Debug_Logs_Installer::get_logs( [
             'search'   => $search,
             'level'    => $level,
             'source'   => $source,
@@ -162,7 +160,7 @@ class LDL_Admin {
      */
 
     public static function cleanup_logs() {
-        $retention = get_option( 'ldl_log_retention', '1m' );
+        $retention = get_option( 'likoton_debug_logs_retention', '1m' );
 
         switch ( $retention ) {
             case '30m': $interval = '30 minutes'; break;
@@ -176,9 +174,9 @@ class LDL_Admin {
         }
 
         global $wpdb;
-        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
+        $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
-        $date_threshold = date_i18n( 'Y-m-d H:i:s', strtotime( "-{$interval}" ) );
+        $date_threshold = gmdate( 'Y-m-d H:i:s', strtotime( "-{$interval}" ) );
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->query(
@@ -195,14 +193,14 @@ class LDL_Admin {
      * Register admin menu
      */
     public static function menu() {
-        $capability = get_option( 'ldl_capability', 'manage_options' );
+        $capability = get_option( 'likoton_debug_logs_capability', 'manage_options' );
 
         // Main menu
         add_menu_page(
             __( 'Logs', 'likoton-debug-logs' ),
             'LiKoToN Logs',
             $capability,
-            'ldl-logs',
+            'likoton-debug-logs-logs',
             [ __CLASS__, 'render_logs_page' ],
             'dashicons-list-view',
             80
@@ -210,21 +208,21 @@ class LDL_Admin {
 
         // Submenu: Logs
         add_submenu_page(
-            'ldl-logs',
+            'likoton-debug-logs-logs',
             __( 'Logs', 'likoton-debug-logs' ),
             __( 'Logs', 'likoton-debug-logs' ),
             $capability,
-            'ldl-logs',
+            'likoton-debug-logs-logs',
             [ __CLASS__, 'render_logs_page' ]
         );
 
         // Submenu: Settings
         add_submenu_page(
-            'ldl-logs',
+            'likoton-debug-logs-logs',
             __( 'Settings', 'likoton-debug-logs' ),
             __( 'Settings', 'likoton-debug-logs' ),
             $capability,
-            'ldl-settings',
+            'likoton-debug-logs-settings',
             [ __CLASS__, 'render_settings_page' ]
         );
 
@@ -234,7 +232,7 @@ class LDL_Admin {
             __( 'Donation', 'likoton-debug-logs' ),
             __( 'Donation', 'likoton-debug-logs' ),
             $capability,
-            'ldl-donation',
+            'likoton-debug-logs-donation',
             [ __CLASS__, 'render_donation_page' ]
         );
     }
@@ -274,35 +272,36 @@ class LDL_Admin {
      */
     public static function render_settings_page() {
 
-        $enabled_levels = get_option( 'ldl_enabled_levels', [] );
+        $enabled_levels = get_option( 'likoton_debug_logs_enabled_levels', [] );
         $cron_disabled = defined('DISABLE_WP_CRON') && DISABLE_WP_CRON;
 
-        if ( isset( $_POST['ldl_settings_action'] ) && check_admin_referer( 'ldl_save_settings' ) ) {
+        if ( isset( $_POST['likoton_debug_logs_settings_action'] ) && check_admin_referer( 'likoton_debug_logs_save_settings' ) ) {
 
-            $dark_mode  = isset( $_POST['ldl_dark_mode'] ) ? 1 : 0;
-            $capability = isset( $_POST['ldl_capability'] )
-                ? sanitize_text_field( wp_unslash( $_POST['ldl_capability'] ) )
+            $dark_mode  = isset( $_POST['likoton_debug_logs_dark_mode'] ) ? 1 : 0;
+            $capability = isset( $_POST['likoton_debug_logs_capability'] )
+                ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_capability'] ) )
                 : 'manage_options';
 
             $cron_disabled = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
-            $retention = isset( $_POST['ldl_log_retention'] )
-                ? sanitize_text_field( wp_unslash( $_POST['ldl_log_retention'] ) )
+            $retention = isset( $_POST['likoton_debug_logs_retention'] )
+                ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_retention'] ) )
                 : '1m';
 
-            $levels = isset( $_POST['ldl_enabled_levels'] )
-                ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['ldl_enabled_levels'] ) )
+            $levels = isset( $_POST['likoton_debug_logs_enabled_levels'] )
+                ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['likoton_debug_logs_enabled_levels'] ) )
                 : [];
 
-            update_option( 'ldl_enabled_levels', $levels );
-            update_option( 'ldl_dark_mode', $dark_mode );
-            update_option( 'ldl_capability', $capability );
-            update_option( 'ldl_log_retention', $retention );
+            update_option( 'likoton_debug_logs_enabled_levels', $levels );
+            update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
+            update_option( 'likoton_debug_logs_capability', $capability );
+            update_option( 'likoton_debug_logs_retention', $retention );
 
+            $enabled_levels = $levels;
         }
 
-        $dark_mode  = (bool) get_option( 'ldl_dark_mode', 0 );
-        $capability = get_option( 'ldl_capability', 'manage_options' );
-        $retention  = get_option( 'ldl_log_retention', '1m' );
+        $dark_mode  = (bool) get_option( 'likoton_debug_logs_dark_mode', 0 );
+        $capability = get_option( 'likoton_debug_logs_capability', 'manage_options' );
+        $retention  = get_option( 'likoton_debug_logs_retention', '1m' );
 
     ?>
 
@@ -316,8 +315,8 @@ class LDL_Admin {
             self::render_tabs( 'settings' ); ?>
 
             <form method="post" id="ldl-settings-form">
-                <?php wp_nonce_field( 'ldl_save_settings', 'ldl_nonce' ); ?>
-                <input type="hidden" name="ldl_settings_action" value="1" />
+                <?php wp_nonce_field( 'likoton_debug_logs_save_settings', 'likoton_debug_logs_nonce' ); ?>
+                <input type="hidden" name="likoton_debug_logs_settings_action" value="1" />
 
                 <table class="form-table">
 
@@ -328,8 +327,8 @@ class LDL_Admin {
                             <label class="components-form-toggle">
                                 <input type="checkbox"
                                        class="components-form-toggle__input"
-                                       name="ldl_dark_mode"
-                                       id="ldl_dark_mode"
+                                       name="likoton_debug_logs_dark_mode"
+                                       id="likoton_debug_logs_dark_mode"
                                        value="1"
                                        <?php checked( $dark_mode ); ?> />
                                 <span class="components-form-toggle__track"></span>
@@ -342,7 +341,7 @@ class LDL_Admin {
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Log retention', 'likoton-debug-logs' ); ?></th>
                         <td>
-                            <select name="ldl_log_retention" <?php disabled( $cron_disabled ); ?>>
+                            <select name="likoton_debug_logs_retention" <?php disabled( $cron_disabled ); ?>>
                                 <option value="30m" <?php selected( $retention, '30m' ); ?>><?php esc_html_e( '30 minutes', 'likoton-debug-logs' ); ?></option>
                                 <option value="1h" <?php selected( $retention, '1h' ); ?>><?php esc_html_e( '1 hour', 'likoton-debug-logs' ); ?></option>
                                 <option value="12h" <?php selected( $retention, '12h' ); ?>><?php esc_html_e( '12 hours', 'likoton-debug-logs' ); ?></option>
@@ -380,7 +379,7 @@ class LDL_Admin {
                                     <?php foreach ( self::get_all_levels() as $lvl ) : ?>
                                         <label class="ldl-segment">
                                             <input type="checkbox"
-                                                name="ldl_enabled_levels[]"
+                                                name="likoton_debug_logs_enabled_levels[]"
                                                 value="<?php echo esc_attr( $lvl ); ?>"
                                                 <?php checked( in_array( $lvl, $enabled_levels, true ) ); ?> />
                                             <span><?php echo esc_html( self::format_level( $lvl ) ); ?></span>
@@ -395,7 +394,7 @@ class LDL_Admin {
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Capability', 'likoton-debug-logs' ); ?></th>
                         <td>
-                            <select name="ldl_capability" id="ldl_capability">
+                            <select name="likoton_debug_logs_capability" id="likoton_debug_logs_capability">
                                 <option value="manage_options" <?php selected( $capability, 'manage_options' ); ?>>
                                     <?php esc_html_e( 'Administrator (full access)', 'likoton-debug-logs' ); ?>
                                 </option>
@@ -428,10 +427,10 @@ class LDL_Admin {
 
         <div class="ldl-donation-box">
             <a href="https://buycoffee.to/likoton" target="_blank">
-                <img src="<?php echo esc_url( LDL_PLUGIN_URL . 'images/buycoffee.png' ); ?>" alt="Buy me a coffee" />
+                <img src="<?php echo esc_url( LIKOTON_DEBUG_LOGS_PLUGIN_URL . 'images/buycoffee.png' ); ?>" alt="Buy me a coffee" />
             </a>
             <a href="https://revolut.me/piotr7c5k" target="_blank">
-                <img src="<?php echo esc_url( LDL_PLUGIN_URL . 'images/revolut.png' ); ?>" alt="Buy me a coffee" />
+                <img src="<?php echo esc_url( LIKOTON_DEBUG_LOGS_PLUGIN_URL . 'images/revolut.png' ); ?>" alt="Buy me a coffee" />
             </a>
         </div>
         <p class="ldl-donation"><?php esc_html_e( 'Thank you!', 'likoton-debug-logs' ); ?></p>
@@ -447,19 +446,19 @@ class LDL_Admin {
         <nav class="health-check-tabs-wrapper hide-if-no-js tab-count-3"
              aria-label="<?php esc_attr_e( 'Bookmark menu', 'likoton-debug-logs' ); ?>">
 
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=ldl-logs' ) ); ?>"
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-logs' ) ); ?>"
                class="health-check-tab <?php echo $active === 'logs' ? 'active' : ''; ?>"
                <?php echo $active === 'logs' ? 'aria-current="page"' : ''; ?>>
                 <?php esc_html_e( 'Logs', 'likoton-debug-logs' ); ?>
             </a>
 
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=ldl-settings' ) ); ?>"
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-settings' ) ); ?>"
                class="health-check-tab <?php echo $active === 'settings' ? 'active' : ''; ?>"
                <?php echo $active === 'settings' ? 'aria-current="page"' : ''; ?>>
                 <?php esc_html_e( 'Settings', 'likoton-debug-logs' ); ?>
             </a>
 
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=ldl-donation' ) ); ?>"
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-donation' ) ); ?>"
                class="health-check-tab <?php echo $active === 'donation' ? 'active' : ''; ?>"
                <?php echo $active === 'donation' ? 'aria-current="page"' : ''; ?>>
                 <?php esc_html_e( 'Donation', 'likoton-debug-logs' ); ?>
@@ -504,19 +503,19 @@ class LDL_Admin {
      */
     public static function handle_delete_logs() {
 
-        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
             wp_die( 'No permission' );
         }
 
-        check_admin_referer( 'ldl_delete_logs', 'ldl_delete_logs_nonce' );
+        check_admin_referer( 'likoton_debug_logs_delete_logs', 'likoton_debug_logs_delete_logs_nonce' );
 
         global $wpdb;
-        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
+        $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query( "TRUNCATE TABLE $table" );
 
-        wp_safe_redirect( admin_url( 'admin.php?page=ldl-logs&deleted=1' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=likoton-debug-logs-logs&deleted=1' ) );
         exit;
     }
 
@@ -525,20 +524,20 @@ class LDL_Admin {
      */
     public static function handle_export_logs() {
 
-        if ( ! current_user_can( get_option( 'ldl_capability', 'manage_options' ) ) ) {
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
             wp_die( 'No permission' );
         }
 
-        check_admin_referer( 'ldl_export_logs', 'ldl_export_logs_nonce' );
+        check_admin_referer( 'likoton_debug_logs_export_logs', 'likoton_debug_logs_export_logs_nonce' );
 
         global $wpdb;
-        $table = $wpdb->prefix . LDL_Installer::TABLE_NAME;
+        $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
         $rows = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC", ARRAY_A );
 
         nocache_headers();
         header( 'Content-Type: text/csv; charset=utf-8' );
-        header( 'Content-Disposition: attachment; filename=ldl-logs.csv' );
+        header( 'Content-Disposition: attachment; filename=likoton-debug-logs.csv' );
 
         $output = fopen( 'php://output', 'w' );
 
@@ -595,7 +594,7 @@ class LDL_Admin {
 
         $last = $last_raw;
 
-        $logs = LDL_Installer::get_logs( [
+        $logs = Likoton_Debug_Logs_Installer::get_logs( [
             'search'   => $search,
             'level'    => $level,
             'source'   => $source,
@@ -604,7 +603,7 @@ class LDL_Admin {
         ] );
         ?>
         <form id="ldl-filters" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
-            <input type="hidden" name="page" value="ldl-logs" />
+            <input type="hidden" name="page" value="likoton-debug-logs-logs" />
 
             <div class="ldl-filters">
 
@@ -617,7 +616,7 @@ class LDL_Admin {
                 <select name="level">
                     <option value=""><?php esc_html_e( 'All levels', 'likoton-debug-logs' ); ?></option>
                     <?php
-                    $levels = get_option( 'ldl_enabled_levels', self::get_all_levels() );
+                    $levels = get_option( 'likoton_debug_logs_enabled_levels', self::get_all_levels() );
                     foreach ( $levels as $lvl ) :
                         ?>
                         <option value="<?php echo esc_attr( $lvl ); ?>" <?php selected( $level, $lvl ); ?>>
@@ -629,7 +628,7 @@ class LDL_Admin {
                 <select name="source">
                     <option value=""><?php esc_html_e( 'All sources', 'likoton-debug-logs' ); ?></option>
                     <?php
-                    $sources = LDL_Installer::get_unique_sources();
+                    $sources = Likoton_Debug_Logs_Installer::get_unique_sources();
                     foreach ( $sources as $src ) :
                     ?>
                         <option value="<?php echo esc_attr( $src ); ?>" <?php selected( $source, $src ); ?>>
@@ -694,16 +693,16 @@ class LDL_Admin {
 
         <div class="ldl-actions">
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ldl-delete-form">
-                <?php wp_nonce_field( 'ldl_delete_logs', 'ldl_delete_logs_nonce' ); ?>
-                <input type="hidden" name="action" value="ldl_delete_logs" />
+                <?php wp_nonce_field( 'likoton_debug_logs_delete_logs', 'likoton_debug_logs_delete_logs_nonce' ); ?>
+                <input type="hidden" name="action" value="likoton_debug_logs_delete_logs" />
                 <button class="button button-secondary">
                     <?php esc_html_e( 'Delete all logs', 'likoton-debug-logs' ); ?>
                 </button>
             </form>
 
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                <?php wp_nonce_field( 'ldl_export_logs', 'ldl_export_logs_nonce' ); ?>
-                <input type="hidden" name="action" value="ldl_export_logs" />
+                <?php wp_nonce_field( 'likoton_debug_logs_export_logs', 'likoton_debug_logs_export_logs_nonce' ); ?>
+                <input type="hidden" name="action" value="likoton_debug_logs_export_logs" />
                 <button class="button button-primary">
                     <?php esc_html_e( 'Export logs (CSV)', 'likoton-debug-logs' ); ?>
                 </button>

@@ -6,9 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class LDL_Installer {
+class Likoton_Debug_Logs_Installer {
 
-    const TABLE_NAME = 'ldl_logs';
+    const TABLE_NAME = 'likoton_debug_logs';
 
     public static function activate() {
         global $wpdb;
@@ -34,19 +34,19 @@ class LDL_Installer {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
-        if ( get_option( 'ldl_enabled_levels', null ) === null ) {
-           update_option( 'ldl_enabled_levels', [
+        if ( get_option( 'likoton_debug_logs_enabled_levels', null ) === null ) {
+           update_option( 'likoton_debug_logs_enabled_levels', [
                 'debug', 'info', 'notice', 'warning', 'error',
                 'critical', 'alert', 'emergency',
                 'deprecated', 'user_deprecated', 'strict', 'parse',
                 'core_error', 'core_warning', 'compile_error', 'compile_warning',
                 'recoverable_error', 'user_error', 'user_warning', 'user_notice',
             ] );
-        }
+}
     }
 
     public static function deactivate() {
-        wp_clear_scheduled_hook( 'ldl_cleanup_logs' );
+        wp_clear_scheduled_hook( 'likoton_debug_logs_cleanup_logs' );
     }
 
     public static function uninstall() {
@@ -91,12 +91,14 @@ class LDL_Installer {
             }
         }
 
-        $enabled_levels = get_option( 'ldl_enabled_levels', [] );
-
         if ( $args['level'] !== '' ) {
-            $where .= ' AND level = %s';
+            $where   .= ' AND level = %s';
             $params[] = $args['level'];
-        } elseif ( ! empty( $enabled_levels ) ) {
+        }
+
+        $enabled_levels = get_option( 'likoton_debug_logs_enabled_levels', [] );
+
+        if ( $args['level'] === '' && ! empty( $enabled_levels ) ) {
             $placeholders = implode( ',', array_fill( 0, count( $enabled_levels ), '%s' ) );
             $where .= " AND level IN ($placeholders)";
             $params = array_merge( $params, $enabled_levels );
