@@ -184,7 +184,9 @@ Yes, each site has its own logs table.
 ## Changelog ##
 
 1.1.0
-- Change levels colors
+- Persistent table sort order
+- Per-level colors in the Log Levels settings control
+- Configurable source badge colors via REST API
 
 1.0.0
 - Initial release
