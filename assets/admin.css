@@ -109,6 +109,7 @@
 .ldl-level-user_notice       { background:#0288d1; }
 
 /* Sources */
+[class*="ldl-source-"] { background: #607d8b; }
 .ldl-source-php      { background:#20c997; }
 .ldl-source-wordpress,
 .ldl-source-wp       { background:#0073aa; }
