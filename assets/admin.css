@@ -339,13 +339,34 @@
 .ldl-segment input:checked + span {
     font-weight: 600;
     color: #fff;
-}
-
-.ldl-segment input:checked + span {
-    background: #2271b1;
     padding: 2px 6px;
     border-radius: 3px;
+    background: #6c757d; /* fallback (debug) */
 }
+
+/* PSR-3 levels */
+.ldl-segment:has(input[value="emergency"]) input:checked + span  { background: #000; }
+.ldl-segment:has(input[value="alert"]) input:checked + span      { background: #6610f2; }
+.ldl-segment:has(input[value="critical"]) input:checked + span   { background: #b21f2d; }
+.ldl-segment:has(input[value="error"]) input:checked + span      { background: #dc3545; }
+.ldl-segment:has(input[value="warning"]) input:checked + span    { background: #ffc107; color: #000; }
+.ldl-segment:has(input[value="notice"]) input:checked + span     { background: #007bff; }
+.ldl-segment:has(input[value="info"]) input:checked + span       { background: #17a2b8; }
+.ldl-segment:has(input[value="debug"]) input:checked + span      { background: #6c757d; }
+
+/* PHP levels */
+.ldl-segment:has(input[value="deprecated"]) input:checked + span        { background: #795548; }
+.ldl-segment:has(input[value="user_deprecated"]) input:checked + span   { background: #8d6e63; }
+.ldl-segment:has(input[value="strict"]) input:checked + span            { background: #455a64; }
+.ldl-segment:has(input[value="parse"]) input:checked + span             { background: #5d4037; }
+.ldl-segment:has(input[value="core_error"]) input:checked + span        { background: #c62828; }
+.ldl-segment:has(input[value="core_warning"]) input:checked + span      { background: #f9a825; color: #000; }
+.ldl-segment:has(input[value="compile_error"]) input:checked + span     { background: #ad1457; }
+.ldl-segment:has(input[value="compile_warning"]) input:checked + span   { background: #ffb300; color: #000; }
+.ldl-segment:has(input[value="recoverable_error"]) input:checked + span { background: #6a1b9a; }
+.ldl-segment:has(input[value="user_error"]) input:checked + span        { background: #d32f2f; }
+.ldl-segment:has(input[value="user_warning"]) input:checked + span      { background: #fbc02d; color: #000; }
+.ldl-segment:has(input[value="user_notice"]) input:checked + span       { background: #0288d1; }
 
 .ldl-levels-actions {
     display: flex;

@@ -4,7 +4,7 @@
  * Plugin URI: https://likoton.pl
  * Description: Collects and displays WordPress and PHP debug logs with filters, live view and dark mode
  * Author: LiKoToN
- * Version: 1.0.0
+ * Version: 1.1.0
  * License: GPLv3
  * License URI: License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
  * Text Domain: likoton-debug-logs
@@ -22,6 +22,7 @@ require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-
 require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-logger.php';
 require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-admin.php';
 require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-assets.php';
+require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-source-colors.php';
 
 add_action( 'init', function () {
     load_plugin_textdomain(
@@ -39,6 +40,7 @@ add_action( 'plugins_loaded', function () {
     \Likoton\DebugLogs\Likoton_Debug_Logs_Logger::init();
     \Likoton\DebugLogs\Likoton_Debug_Logs_Admin::init();
     \Likoton\DebugLogs\Likoton_Debug_Logs_Assets::init();
+    \Likoton\DebugLogs\Likoton_Debug_Logs_Source_Colors::init();
 } );
 
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function ( $links ) {

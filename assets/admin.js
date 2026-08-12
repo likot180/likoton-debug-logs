@@ -10,20 +10,43 @@
 
         const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
 
+        var SORT_KEY = 'likoton_debug_logs_sort';
+
+        function saveSort(colIndex, asc) {
+            try { sessionStorage.setItem(SORT_KEY, JSON.stringify({ col: colIndex, asc: asc })); } catch(e) {}
+        }
+
+        function loadSort() {
+            try { var r = sessionStorage.getItem(SORT_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+        }
+
+        function applySortToTable(colIndex, asc) {
+            var $table = $('#ldl-logs-table');
+            if (!$table.length) return;
+            var $tbody = $table.find('tbody');
+            var $headers = $table.find('th');
+            $headers.removeClass('sorted-asc sorted-desc sorted-column');
+            $headers.eq(colIndex).addClass(asc ? 'sorted-asc' : 'sorted-desc').addClass('sorted-column');
+            var rows = $tbody.find('tr').get();
+            rows.sort(function (a, b) {
+                var A = $(a).children('td').eq(colIndex).text().toUpperCase();
+                var B = $(b).children('td').eq(colIndex).text().toUpperCase();
+                return asc ? A.localeCompare(B) : B.localeCompare(A);
+            });
+            $.each(rows, function (i, row) { $tbody.append(row); });
+        }
+
         function applyDefaultDateSort() {
-            const $dateHeader = $('#ldl-logs-table th.column-date');
-            if ($dateHeader.length) {
-                $dateHeader.addClass('sorted-desc sorted-column');
-                const $tbody = $('#ldl-logs-table tbody');
-                const rows = $tbody.find('tr').get();
-                rows.sort(function (a, b) {
-                    const A = $(a).children('td').eq($dateHeader.index()).text().toUpperCase();
-                    const B = $(b).children('td').eq($dateHeader.index()).text().toUpperCase();
-                    return B.localeCompare(A);
-                });
-                $.each(rows, function (i, row) {
-                    $tbody.append(row);
-                });
+            var saved = loadSort();
+            if (saved !== null) {
+                applySortToTable(saved.col, saved.asc);
+            } else {
+                var $dateHeader = $('#ldl-logs-table th.column-date');
+                if ($dateHeader.length) {
+                    var colIndex = $dateHeader.index();
+                    applySortToTable(colIndex, false);
+                    saveSort(colIndex, false);
+                }
             }
         }
 
@@ -94,21 +117,10 @@
         }
 
         $(document).on('click', '#ldl-logs-table th', function () {
-            const $table = $('#ldl-logs-table');
-            const $tbody = $table.find('tbody');
-            const index = $(this).index();
-            const rows = $tbody.find('tr').get();
-            const asc = !$(this).hasClass('sorted-asc');
-            $('#ldl-logs-table th').removeClass('sorted-asc sorted-desc sorted-column');
-            $(this).addClass(asc ? 'sorted-asc' : 'sorted-desc').addClass('sorted-column');
-            rows.sort(function (a, b) {
-                const A = $(a).children('td').eq(index).text().toUpperCase();
-                const B = $(b).children('td').eq(index).text().toUpperCase();
-                return asc ? A.localeCompare(B) : B.localeCompare(A);
-            });
-            $.each(rows, function (i, row) {
-                $tbody.append(row);
-            });
+            var colIndex = $(this).index();
+            var asc = !$(this).hasClass('sorted-asc');
+            applySortToTable(colIndex, asc);
+            saveSort(colIndex, asc);
         });
 
         applyDefaultDateSort();

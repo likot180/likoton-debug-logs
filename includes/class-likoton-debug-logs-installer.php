@@ -10,6 +10,17 @@ class Likoton_Debug_Logs_Installer {
 
     const TABLE_NAME = 'likoton_debug_logs';
 
+    /** Default colors for known sources */
+    public static function get_default_source_colors() {
+        return [
+            'php'       => '#20c997',
+            'wordpress' => '#0073aa',
+            'wp'        => '#0073aa',
+            'rest_api'  => '#6f42c1',
+            'login'     => '#10b981',
+        ];
+    }
+
     public static function activate() {
         global $wpdb;
 
