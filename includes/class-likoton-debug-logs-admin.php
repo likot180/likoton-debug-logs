@@ -141,7 +141,7 @@ class Likoton_Debug_Logs_Admin {
                 <td><span class="ldl-badge ldl-level-<?php echo esc_attr( $row->level ); ?>"><?php echo esc_html( self::format_level( $row->level ) ); ?></span></td>
                 <td><span class="ldl-badge ldl-source-<?php echo esc_attr( $row->source ); ?>"><?php echo esc_html( $row->source ); ?></span></td>
                 <td><?php echo esc_html( $row->message ); ?></td>
-                <td><?php echo self::format_local_date( $row->created_at ); ?></td>
+                <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
             </tr>
         <?php endforeach;
 
@@ -178,14 +178,15 @@ class Likoton_Debug_Logs_Admin {
 
         $date_threshold = gmdate( 'Y-m-d H:i:s', strtotime( "-{$interval}" ) );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
             $wpdb->prepare(
-                "DELETE FROM `{$table}` WHERE created_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "DELETE FROM `{$table}` WHERE created_at < %s",
                 $date_threshold
             )
         );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query( "OPTIMIZE TABLE `{$table}`" );
     }
 
@@ -255,6 +256,7 @@ class Likoton_Debug_Logs_Admin {
             <?php
             self::render_header();
 
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flag set by wp_safe_redirect after nonce-verified delete
             if ( isset( $_GET['deleted'] ) ) : ?>
                 <div class="notice notice-success is-dismissible">
                     <p><?php esc_html_e( 'All logs deleted.', 'likoton-debug-logs' ); ?></p>
@@ -533,7 +535,12 @@ class Likoton_Debug_Logs_Admin {
         global $wpdb;
         $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
-        $rows = $wpdb->get_results( "SELECT * FROM $table ORDER BY id ASC", ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export query, caching not applicable
+        $rows = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            "SELECT * FROM `{$table}` ORDER BY id ASC",
+            ARRAY_A
+        );
 
         nocache_headers();
         header( 'Content-Type: text/csv; charset=utf-8' );
@@ -575,11 +582,12 @@ class Likoton_Debug_Logs_Admin {
      */
     public static function render_logs_content() {
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $search   = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
-        $last_raw = isset( $_GET['last'] ) ? $_GET['last'] : 50;
-        $level    = isset( $_GET['level'] ) ? sanitize_text_field( wp_unslash( $_GET['level'] ) ) : '';
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended
+        $search   = isset( $_GET['s'] )      ? sanitize_text_field( wp_unslash( $_GET['s'] ) )      : '';
+        $last_raw = isset( $_GET['last'] )   ? sanitize_text_field( wp_unslash( $_GET['last'] ) )   : '50';
+        $level    = isset( $_GET['level'] )  ? sanitize_text_field( wp_unslash( $_GET['level'] ) )  : '';
         $source   = isset( $_GET['source'] ) ? sanitize_text_field( wp_unslash( $_GET['source'] ) ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
         $page = 1;
 
@@ -676,9 +684,7 @@ class Likoton_Debug_Logs_Admin {
                                     </span>
                                 </td>
                                 <td><?php echo esc_html( $row->message ); ?></td>
-                                <td><?php
-                                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                                echo self::format_local_date( $row->created_at ); ?></td>
+                                <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else : ?>

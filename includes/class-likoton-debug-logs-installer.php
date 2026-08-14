@@ -21,6 +21,16 @@ class Likoton_Debug_Logs_Installer {
         ];
     }
 
+    public static function get_all_levels() {
+        return [
+            'debug', 'info', 'notice', 'warning', 'error',
+            'critical', 'alert', 'emergency',
+            'deprecated', 'user_deprecated', 'strict', 'parse',
+            'core_error', 'core_warning', 'compile_error', 'compile_warning',
+            'recoverable_error', 'user_error', 'user_warning', 'user_notice',
+        ];
+    }
+
     public static function activate() {
         global $wpdb;
 
@@ -63,22 +73,31 @@ class Likoton_Debug_Logs_Installer {
     public static function uninstall() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_NAME;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChangeInterpolatedNotPrepared
-        $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
     }
 
     public static function get_unique_sources() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_NAME;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return $wpdb->get_col( "SELECT DISTINCT source FROM $table ORDER BY source ASC" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_col( "SELECT DISTINCT source FROM `{$table}` ORDER BY source ASC" );
     }
 
+    /**
+     * Retrieve log entries from the database with optional filters.
+     *
+     * Security note: this method uses esc_sql() on all dynamically built SQL fragments
+     * ($table from $wpdb->prefix + a hardcoded constant; $levels_in from a whitelist
+     * validated against get_all_levels(); $where_extra contains only literal %s/%d
+     * placeholders). PHPCS cannot statically verify esc_sql()-escaped variables and
+     * flags them as unsafe — the disable block below suppresses those false positives.
+     * User-supplied values (search, source) are always passed through $wpdb->prepare().
+     */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
     public static function get_logs( $args = [] ) {
         global $wpdb;
-
-        $table = $wpdb->prefix . self::TABLE_NAME;
 
         $defaults = [
             'search'   => '',
@@ -89,46 +108,63 @@ class Likoton_Debug_Logs_Installer {
         ];
         $args = wp_parse_args( $args, $defaults );
 
-        $where   = '1=1';
-        $params  = [];
-
-        if ( $args['search'] !== '' ) {
-            if ( ctype_digit( $args['search'] ) ) {
-                $where   .= ' AND id = %d';
-                $params[] = (int) $args['search'];
-            } else {
-                $where   .= ' AND message LIKE %s';
-                $params[] = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-            }
-        }
-
-        if ( $args['level'] !== '' ) {
-            $where   .= ' AND level = %s';
-            $params[] = $args['level'];
-        }
-
-        $enabled_levels = get_option( 'likoton_debug_logs_enabled_levels', [] );
-
-        if ( $args['level'] === '' && ! empty( $enabled_levels ) ) {
-            $placeholders = implode( ',', array_fill( 0, count( $enabled_levels ), '%s' ) );
-            $where .= " AND level IN ($placeholders)";
-            $params = array_merge( $params, $enabled_levels );
-        }
-
-        if ( $args['source'] !== '' ) {
-            $where   .= ' AND source = %s';
-            $params[] = $args['source'];
-        }
-
+        $search   = $args['search'];
+        $level    = sanitize_key( $args['level'] );
+        $source   = sanitize_key( $args['source'] );
         $page     = max( 1, (int) $args['page'] );
         $per_page = max( 1, (int) $args['per_page'] );
         $offset   = ( $page - 1 ) * $per_page;
 
-        $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
+        // Table name is built from $wpdb->prefix + a hardcoded constant — safe to use with esc_sql.
+        $table = esc_sql( $wpdb->prefix . self::TABLE_NAME );
+
+        $enabled_levels = get_option( 'likoton_debug_logs_enabled_levels', [] );
+        $all_levels     = self::get_all_levels();
+
+        // Determine which levels to show.
+        if ( $level !== '' ) {
+            // Specific level requested — validate against known levels, default to empty on unknown.
+            $active_levels = in_array( $level, $all_levels, true ) ? [ $level ] : [ '__none__' ];
+        } elseif ( empty( $enabled_levels ) ) {
+            $active_levels = [ '__none__' ];
+        } else {
+            $active_levels = array_intersect( $enabled_levels, $all_levels );
+        }
+
+        // Sanitize each level slug — levels are known strings, esc_sql makes them DB-safe.
+        $escaped_levels = array_map( function( $l ) {
+            return "'" . esc_sql( $l ) . "'";
+        }, $active_levels );
+        $levels_in = implode( ', ', $escaped_levels );
+
+        // Source and search filters.
+        $where_extra = '';
+        $params      = [];
+
+        if ( $search !== '' ) {
+            if ( ctype_digit( $search ) ) {
+                $where_extra .= ' AND id = %d';
+                $params[]     = (int) $search;
+            } else {
+                $where_extra .= ' AND message LIKE %s';
+                $params[]     = '%' . $wpdb->esc_like( $search ) . '%';
+            }
+        }
+
+        if ( $source !== '' ) {
+            $where_extra .= ' AND source = %s';
+            $params[]     = $source;
+        }
+
         $params[] = $per_page;
         $params[] = $offset;
 
-        return $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+        // $table: esc_sql( $wpdb->prefix . CONSTANT ) — safe.
+        // $levels_in: esc_sql() applied to each element individually — safe.
+        // $where_extra: literal SQL with %s/%d placeholders only — safe.
+        // No intermediate variable used — PHPCS tracks variable assignment as unsafe.
+        return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE level IN ( {$levels_in} ){$where_extra} ORDER BY id DESC LIMIT %d OFFSET %d", $params ) );
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 }

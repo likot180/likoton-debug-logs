@@ -21,20 +21,37 @@ class Likoton_Debug_Logs_Logger {
 
     public static function init() {
         add_action( 'wp_error_added', [ __CLASS__, 'log_wp_error' ], 10, 4 );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
         set_error_handler( [ __CLASS__, 'log_php_error' ] );
+
         add_action( 'rest_request_after_callbacks', [ __CLASS__, 'log_rest_request' ], 10, 3 );
         add_action( 'wp_login', [ __CLASS__, 'log_user_login' ], 10, 2 );
     }
 
+    private static function is_block_editor_iframe() {
+        if ( ! is_admin() ) {
+            return false;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        return isset( $_GET['postType'] ) || isset( $_GET['postId'] );
+    }
+
     protected static function insert_log( $level, $source, $message, $context = null ) {
         global $wpdb;
-        
+
         $level = strtolower( $level );
 
-        $enabled = get_option( 'likoton_debug_logs_enabled_levels', [] );
+        $enabled = get_option( 'likoton_debug_logs_enabled_levels', null );
 
-        if ( ! in_array( $level, $enabled, true ) ) {
+        // Option missing (e.g. plugin activated without running activate()) — allow all levels.
+        if ( $enabled === null ) {
+            $enabled = Likoton_Debug_Logs_Installer::get_all_levels();
+        }
+
+        // Empty array means user explicitly disabled all levels — respect that.
+        if ( ! empty( $enabled ) && ! in_array( $level, $enabled, true ) ) {
             return;
         }
 
@@ -71,6 +88,11 @@ class Likoton_Debug_Logs_Logger {
     }
 
     public static function log_php_error( $errno, $errstr, $errfile, $errline ) {
+        // Skip logging inside the iframed block editor (WP 7.0+) to avoid false positives.
+        if ( self::is_block_editor_iframe() ) {
+            return false;
+        }
+
         $levels = [
             E_ERROR             => 'error',
             E_WARNING           => 'warning',

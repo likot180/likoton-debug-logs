@@ -410,6 +410,7 @@
 .ldl-scroll-loader {
     font-size: 14px;
     padding: 10px;
+    display: none;
 }
 
 input[type="search"]::-webkit-search-cancel-button {

@@ -8,13 +8,15 @@
  * License: GPLv3
  * License URI: License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
  * Text Domain: likoton-debug-logs
+ * Requires PHP: 7.4
+ * Requires at least: 6.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'LIKOTON_DEBUG_LOGS_VERSION', '1.0.0' );
+define( 'LIKOTON_DEBUG_LOGS_VERSION', '1.1.0' );
 define( 'LIKOTON_DEBUG_LOGS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LIKOTON_DEBUG_LOGS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -25,12 +27,9 @@ require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-
 require_once LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'includes/class-likoton-debug-logs-source-colors.php';
 
 add_action( 'init', function () {
-    load_plugin_textdomain(
-        'likoton-debug-logs',
-        false,
-        dirname( plugin_basename( __FILE__ ) ) . '/languages'
-    );
-});
+    // phpcs:ignore WordPress.WP.DeprecatedFunctions.load_plugin_textdomainFound, PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound
+    load_plugin_textdomain( 'likoton-debug-logs', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
 
 register_activation_hook( __FILE__, [ '\Likoton\DebugLogs\Likoton_Debug_Logs_Installer', 'activate' ] );
 register_deactivation_hook( __FILE__, [ '\Likoton\DebugLogs\Likoton_Debug_Logs_Installer', 'deactivate' ] );
