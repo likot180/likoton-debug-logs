@@ -47,6 +47,30 @@ msgstr "Últimos 1000"
 msgid "All logs"
 msgstr "Todos los registros"
 
+msgid "Date range"
+msgstr "Rango de fechas"
+
+msgid "From date"
+msgstr "Desde fecha"
+
+msgid "To date"
+msgstr "Hasta fecha"
+
+msgid "Choose date"
+msgstr "Elegir fecha"
+
+msgid "Today"
+msgstr "Hoy"
+
+msgid "Last hour"
+msgstr "Última hora"
+
+msgid "Last week"
+msgstr "Última semana"
+
+msgid "Clear"
+msgstr "Borrar"
+
 msgid "Level"
 msgstr "Nivel"
 

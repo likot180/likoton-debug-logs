@@ -5,9 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-/**
- * Admin interface for LiKoToN Debug Logs
- */
+/* Admin interface for LiKoToN Debug Logs */
 class Likoton_Debug_Logs_Admin {
 
     public static function init() {
@@ -25,9 +23,7 @@ class Likoton_Debug_Logs_Admin {
         add_action( 'likoton_debug_logs_cleanup_logs', [ __CLASS__, 'cleanup_logs' ] );
     }
 
-    /**
-     * Levels
-     */
+    /* Levels */
     private static function get_all_levels() {
         return [
             'debug', 'info', 'notice', 'warning', 'error',
@@ -38,9 +34,7 @@ class Likoton_Debug_Logs_Admin {
         ];
     }
 
-    /**
-     * Schedules
-     */
+    /* Schedules */
     public static function add_schedules( $schedules ) {
         $schedules['likoton_debug_logs_every_30_minutes'] = [
             'interval' => 30 * 60,
@@ -55,9 +49,7 @@ class Likoton_Debug_Logs_Admin {
         return $schedules;
     }
 
-    /**
-     * Auto-save
-     */
+    /* Auto-save */
     public static function ajax_save_settings() {
         check_ajax_referer( 'likoton_debug_logs_save_settings', 'likoton_debug_logs_nonce' );
 
@@ -116,13 +108,19 @@ class Likoton_Debug_Logs_Admin {
         $source = isset( $_GET['source'] ) ? sanitize_text_field( wp_unslash( $_GET['source'] ) ) : '';
         $last_raw = isset( $_GET['last'] ) ? sanitize_text_field( wp_unslash( $_GET['last'] ) ) : 50;
 
-        if ( $last_raw === 'all' ) {
+        if ( $last_raw === 'all' || $last_raw === 'range' ) {
             wp_send_json_success( [ 'html' => '', 'done' => true ] );
         }
 
-        $per_page = (int) $last_raw;
-        if ( $per_page <= 0 ) {
-            $per_page = 50;
+        $time_windowed = in_array( $last_raw, [ 'hour', 'today', 'week' ], true );
+
+        if ( $time_windowed ) {
+            $per_page = 100;
+        } else {
+            $per_page = (int) $last_raw;
+            if ( $per_page <= 0 ) {
+                $per_page = 50;
+            }
         }
 
         $logs = Likoton_Debug_Logs_Installer::get_logs( [
@@ -131,6 +129,7 @@ class Likoton_Debug_Logs_Admin {
             'source'   => $source,
             'page'     => $page,
             'per_page' => $per_page,
+            'since'    => $time_windowed ? self::compute_since( $last_raw ) : '',
         ] );
 
         ob_start();
@@ -155,9 +154,7 @@ class Likoton_Debug_Logs_Admin {
         wp_send_json_success( [ 'html' => $html, 'done' => false ] );
     }
 
-    /**
-     * Automatic log cleanup
-     */
+    /* Automatic log cleanup */
 
     public static function cleanup_logs() {
         $retention = get_option( 'likoton_debug_logs_retention', '1m' );
@@ -190,9 +187,7 @@ class Likoton_Debug_Logs_Admin {
         $wpdb->query( "OPTIMIZE TABLE `{$table}`" );
     }
 
-    /**
-     * Register admin menu
-     */
+    /* Register admin menu */
     public static function menu() {
         $capability = get_option( 'likoton_debug_logs_capability', 'manage_options' );
 
@@ -238,18 +233,14 @@ class Likoton_Debug_Logs_Admin {
         );
     }
 
-    /**
-     * Header
-     */
+    /* Header */
     public static function render_header() {
         ?>
             <h1>LiKoToN Debug Logs</h1>
         <?php
     }
 
-    /**
-     * Render Logs page
-     */
+    /* Render Logs page */
     public static function render_logs_page() {
         ?>
         <div class="wrap">
@@ -269,9 +260,7 @@ class Likoton_Debug_Logs_Admin {
         <?php
     }
 
-    /**
-     * Render Settings page
-     */
+    /* Render Settings page */
     public static function render_settings_page() {
 
         $enabled_levels = get_option( 'likoton_debug_logs_enabled_levels', [] );
@@ -440,9 +429,7 @@ class Likoton_Debug_Logs_Admin {
     <?php
     }
 
-    /**
-     * Render tabs navigation
-     */
+    /* Render tabs navigation */
     private static function render_tabs( $active = 'logs' ) {
         ?>
         <nav class="health-check-tabs-wrapper hide-if-no-js tab-count-3"
@@ -470,16 +457,36 @@ class Likoton_Debug_Logs_Admin {
         <?php
     }
 
-    /**
-     * Format log level
-     */
+    /* Format log level */
     private static function format_level( $level ) {
         return ucwords( str_replace( '_', ' ', $level ) );
     }
 
-    /**
-     * Format UTC date to local WordPress time
-     */
+    /* Compute the UTC datetime lower bound for the "hour" / "today" / "week" quick filters. */
+    private static function compute_since( $last_raw ) {
+        $now = current_datetime();
+
+        switch ( $last_raw ) {
+            case 'hour':
+                $since = $now->modify( '-1 hour' );
+                break;
+
+            case 'today':
+                $since = $now->setTime( 0, 0, 0 );
+                break;
+
+            case 'week':
+                $since = $now->modify( '-7 days' );
+                break;
+
+            default:
+                return '';
+        }
+
+        return $since->setTimezone( new \DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+    }
+
+    /* Format UTC date to local WordPress time */
     public static function format_local_date( $utc_string ) {
 
         if ( empty( $utc_string ) ) {
@@ -500,9 +507,7 @@ class Likoton_Debug_Logs_Admin {
         );
     }
 
-    /**
-     * Delete logs
-     */
+    /* Delete logs */
     public static function handle_delete_logs() {
 
         if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
@@ -521,9 +526,7 @@ class Likoton_Debug_Logs_Admin {
         exit;
     }
 
-    /**
-     * Export logs
-     */
+    /* Export logs */
     public static function handle_export_logs() {
 
         if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
@@ -577,22 +580,60 @@ class Likoton_Debug_Logs_Admin {
         exit;
     }
 
-    /**
-     * Render logs table and filters
-     */
+    /* Render logs table and filters */
     public static function render_logs_content() {
 
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended
-        $search   = isset( $_GET['s'] )      ? sanitize_text_field( wp_unslash( $_GET['s'] ) )      : '';
-        $last_raw = isset( $_GET['last'] )   ? sanitize_text_field( wp_unslash( $_GET['last'] ) )   : '50';
-        $level    = isset( $_GET['level'] )  ? sanitize_text_field( wp_unslash( $_GET['level'] ) )  : '';
-        $source   = isset( $_GET['source'] ) ? sanitize_text_field( wp_unslash( $_GET['source'] ) ) : '';
-        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        $filter_keys = [ 's', 'level', 'source', 'last', 'date_from', 'date_to' ];
+        $user_id     = get_current_user_id();
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only presence check, no state change
+        $has_explicit_filters = (bool) array_filter( $filter_keys, function( $key ) {
+            return isset( $_GET[ $key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        } );
+
+        if ( $has_explicit_filters ) {
+            // phpcs:disable WordPress.Security.NonceVerification.Recommended
+            $search    = isset( $_GET['s'] )         ? sanitize_text_field( wp_unslash( $_GET['s'] ) )         : '';
+            $last_raw  = isset( $_GET['last'] )      ? sanitize_text_field( wp_unslash( $_GET['last'] ) )      : 'today';
+            $level     = isset( $_GET['level'] )     ? sanitize_text_field( wp_unslash( $_GET['level'] ) )     : '';
+            $source    = isset( $_GET['source'] )    ? sanitize_text_field( wp_unslash( $_GET['source'] ) )    : '';
+            $date_from = isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '';
+            $date_to   = isset( $_GET['date_to'] )   ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) )   : '';
+            // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flag, no state change itself
+            $is_auto_refresh = isset( $_GET['auto_refresh'] );
+
+            if ( $user_id && ! $is_auto_refresh ) {
+                update_user_meta( $user_id, 'likoton_debug_logs_filters', [
+                    's'         => $search,
+                    'level'     => $level,
+                    'source'    => $source,
+                    'last'      => $last_raw,
+                    'date_from' => $date_from,
+                    'date_to'   => $date_to,
+                ] );
+            }
+        } else {
+            $remembered = $user_id ? get_user_meta( $user_id, 'likoton_debug_logs_filters', true ) : '';
+            $remembered = is_array( $remembered ) ? $remembered : [];
+
+            $search    = isset( $remembered['s'] )         ? $remembered['s']         : '';
+            $last_raw  = isset( $remembered['last'] )      ? $remembered['last']      : 'today';
+            $level     = isset( $remembered['level'] )     ? $remembered['level']     : '';
+            $source    = isset( $remembered['source'] )    ? $remembered['source']    : '';
+            $date_from = isset( $remembered['date_from'] ) ? $remembered['date_from'] : '';
+            $date_to   = isset( $remembered['date_to'] )   ? $remembered['date_to']   : '';
+        }
 
         $page = 1;
 
-        if ( $last_raw === 'all' ) {
+        $time_windowed = in_array( $last_raw, [ 'hour', 'today', 'week' ], true );
+
+        if ( $last_raw === 'all' || $last_raw === 'range' ) {
             $per_page = 999999;
+        } elseif ( $time_windowed ) {
+            $per_page = 100;
         } else {
             $per_page = (int) $last_raw;
             if ( $per_page <= 0 ) {
@@ -602,12 +643,25 @@ class Likoton_Debug_Logs_Admin {
 
         $last = $last_raw;
 
+        $today_local = current_datetime()->format( 'Y-m-d' );
+
+        if ( '' === $date_from ) {
+            $date_from = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
+        }
+
+        if ( '' === $date_to ) {
+            $date_to = $today_local;
+        }
+
         $logs = Likoton_Debug_Logs_Installer::get_logs( [
-            'search'   => $search,
-            'level'    => $level,
-            'source'   => $source,
-            'page'     => $page,
-            'per_page' => $per_page,
+            'search'    => $search,
+            'level'     => $level,
+            'source'    => $source,
+            'page'      => $page,
+            'per_page'  => $per_page,
+            'date_from' => $last_raw === 'range' ? $date_from : '',
+            'date_to'   => $last_raw === 'range' ? $date_to : '',
+            'since'     => $time_windowed ? self::compute_since( $last_raw ) : '',
         ] );
         ?>
         <form id="ldl-filters" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
@@ -646,14 +700,37 @@ class Likoton_Debug_Logs_Admin {
                 </select>
 
                 <select name="last">
-                    <option value="20" <?php selected( $last, 20 ); ?>><?php esc_html_e( 'Last 20', 'likoton-debug-logs' ); ?></option>
-                    <option value="50" <?php selected( $last, 50 ); ?>><?php esc_html_e( 'Last 50', 'likoton-debug-logs' ); ?></option>
-                    <option value="100" <?php selected( $last, 100 ); ?>><?php esc_html_e( 'Last 100', 'likoton-debug-logs' ); ?></option>
-                    <option value="200" <?php selected( $last, 200 ); ?>><?php esc_html_e( 'Last 200', 'likoton-debug-logs' ); ?></option>
-                    <option value="500" <?php selected( $last, 500 ); ?>><?php esc_html_e( 'Last 500', 'likoton-debug-logs' ); ?></option>
-                    <option value="1000" <?php selected( $last, 1000 ); ?>><?php esc_html_e( 'Last 1000', 'likoton-debug-logs' ); ?></option>
+                    <option value="hour" <?php selected( $last, 'hour' ); ?>><?php esc_html_e( 'Last hour', 'likoton-debug-logs' ); ?></option>
+                    <option value="today" <?php selected( $last, 'today' ); ?>><?php esc_html_e( 'Today', 'likoton-debug-logs' ); ?></option>
+                    <option value="week" <?php selected( $last, 'week' ); ?>><?php esc_html_e( 'Last week', 'likoton-debug-logs' ); ?></option>
                     <option value="all" <?php selected( $last, 'all' ); ?>><?php esc_html_e( 'All logs', 'likoton-debug-logs' ); ?></option>
+                    <option value="range" <?php selected( $last, 'range' ); ?>><?php esc_html_e( 'Date range', 'likoton-debug-logs' ); ?></option>
                 </select>
+
+                <div class="ldl-date-range<?php echo $last_raw === 'range' ? ' is-visible' : ''; ?>" id="ldl-date-range">
+                    <label for="ldl-date-from"><?php esc_html_e( 'From date', 'likoton-debug-logs' ); ?></label>
+                    <div class="ldl-date-field">
+                        <input type="text" name="date_from" id="ldl-date-from" class="ldl-date-input"
+                               value="<?php echo esc_attr( $date_from ); ?>"
+                               data-max="<?php echo esc_attr( $date_to ); ?>"
+                               readonly="readonly" autocomplete="off" />
+                        <button type="button" class="ldl-date-trigger" aria-label="<?php esc_attr_e( 'Choose date', 'likoton-debug-logs' ); ?>">
+                            <span class="dashicons dashicons-calendar-alt"></span>
+                        </button>
+                    </div>
+
+                    <label for="ldl-date-to"><?php esc_html_e( 'To date', 'likoton-debug-logs' ); ?></label>
+                    <div class="ldl-date-field">
+                        <input type="text" name="date_to" id="ldl-date-to" class="ldl-date-input"
+                               value="<?php echo esc_attr( $date_to ); ?>"
+                               data-min="<?php echo esc_attr( $date_from ); ?>"
+                               data-max="<?php echo esc_attr( $today_local ); ?>"
+                               readonly="readonly" autocomplete="off" />
+                        <button type="button" class="ldl-date-trigger" aria-label="<?php esc_attr_e( 'Choose date', 'likoton-debug-logs' ); ?>">
+                            <span class="dashicons dashicons-calendar-alt"></span>
+                        </button>
+                    </div>
+                </div>
 
             </div>
 

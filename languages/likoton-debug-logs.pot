@@ -54,6 +54,38 @@ msgid "All logs"
 msgstr ""
 
 #: includes/class-likoton-debug-logs-admin.php
+msgid "Date range"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "From date"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "To date"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Choose date"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Today"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Last hour"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Last week"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Clear"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
 msgid "Level"
 msgstr ""
 

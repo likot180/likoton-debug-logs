@@ -47,6 +47,30 @@ msgstr "Derniers 1000"
 msgid "All logs"
 msgstr "Tous les journaux"
 
+msgid "Date range"
+msgstr "Plage de dates"
+
+msgid "From date"
+msgstr "Date de début"
+
+msgid "To date"
+msgstr "Date de fin"
+
+msgid "Choose date"
+msgstr "Choisir une date"
+
+msgid "Today"
+msgstr "Aujourd'hui"
+
+msgid "Last hour"
+msgstr "Dernière heure"
+
+msgid "Last week"
+msgstr "Dernière semaine"
+
+msgid "Clear"
+msgstr "Effacer"
+
 msgid "Level"
 msgstr "Niveau"
 

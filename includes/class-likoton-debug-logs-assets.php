@@ -45,7 +45,12 @@ class Likoton_Debug_Logs_Assets {
 		);
 
 		wp_localize_script( 'likoton-debug-logs-admin', 'likotonDebugLogsData', [
-			'nonce' => wp_create_nonce( 'likoton_debug_logs_load_more_logs' ),
+			'nonce'  => wp_create_nonce( 'likoton_debug_logs_load_more_logs' ),
+			'locale' => str_replace( '_', '-', get_user_locale() ),
+			'i18n'   => [
+				'today' => __( 'Today', 'likoton-debug-logs' ),
+				'clear' => __( 'Clear', 'likoton-debug-logs' ),
+			],
 		] );
     }
 }

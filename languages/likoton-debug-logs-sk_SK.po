@@ -47,6 +47,30 @@ msgstr "Posledných 1000"
 msgid "All logs"
 msgstr "Všetky záznamy"
 
+msgid "Date range"
+msgstr "Rozsah dátumov"
+
+msgid "From date"
+msgstr "Od dátumu"
+
+msgid "To date"
+msgstr "Do dátumu"
+
+msgid "Choose date"
+msgstr "Vybrať dátum"
+
+msgid "Today"
+msgstr "Dnes"
+
+msgid "Last hour"
+msgstr "Posledná hodina"
+
+msgid "Last week"
+msgstr "Posledný týždeň"
+
+msgid "Clear"
+msgstr "Vymazať"
+
 msgid "Level"
 msgstr "Úroveň"
 

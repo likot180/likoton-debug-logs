@@ -3,7 +3,7 @@ Contributors: likoton
 Tags: logs, debug, developer, tools, php
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 
@@ -24,36 +24,13 @@ It includes a clean log viewer with:
 - AJAX live filtering  
 - Infinite scroll  
 - Client-side sorting  
-- Search, level, source and "last X logs" filters  
+- Search, level, source and time filters  
 - Color-coded badges  
 - Dark mode  
 - CSV export (with UTC and local timestamps)  
 - Automatic cleanup based on retention settings  
 
 Perfect for developers, administrators and anyone who needs a clear view of what happens inside WordPress.
-
-== Description (pl_PL) ==
-
-LiKoToN Debug Logs to lekka i nowoczesna wtyczka debugująca dla WordPressa, która automatycznie zbiera:
-
-- błędy i ostrzeżenia PHP  
-- błędy WordPressa (`wp_error_added`)  
-- wywołania REST API (ścieżka, metoda, parametry)  
-- logowania użytkowników  
-- własne logi przez `Likoton_Debug_Logs_Logger::log()`  
-
-Wtyczka oferuje czytelny panel logów z:
-
-- filtrowaniem AJAX  
-- nieskończonym przewijaniem (infinite scroll)  
-- sortowaniem po kolumnach  
-- wyszukiwaniem, filtrem poziomu, źródła i ostatnich X logów  
-- kolorowymi znacznikami poziomów i źródeł  
-- trybem ciemnym  
-- eksportem CSV (czas UTC + lokalny)  
-- automatycznym czyszczeniem logów  
-
-Idealna dla deweloperów i administratorów, którzy chcą mieć pełną kontrolę nad tym, co dzieje się w WordPressie.
 
 ---
 
@@ -69,7 +46,7 @@ Idealna dla deweloperów i administratorów, którzy chcą mieć pełną kontrol
 ### Logs Viewer
 - AJAX live filtering  
 - Infinite scroll  
-- Search, level, source, last X logs  
+- Search, level, source, time 
 - Client-side sorting  
 - Color-coded badges  
 - Responsive table  
@@ -125,7 +102,8 @@ likoton-debug-logs/
 │   ├── class-likoton_debug_logs-admin.php  
 │   ├── class-likoton_debug_logs-assets.php  
 │   ├── class-likoton_debug_logs-installer.php  
-│   └── class-likoton_debug_logs-logger.php  
+│   ├── class-likoton_debug_logs-logger.php
+│   └── class-likoton_debug_logs-source-colors.php  
 ├── languages/  
 │   ├── likoton-debug-logs-en_US.po/mo  
 │   ├── likoton-debug-logs-pl_PL.po/mo  
@@ -181,7 +159,16 @@ Yes, choose the required capability in Settings.
 
 Yes, each site has its own logs table.
 
+== Screenshots ==
+
+1. Logs tab
+2. Logs tab in dark mode
+3. Settings in dark mode
+
 ## Changelog ##
+
+1.2.0
+- A date range selection filter has been added
 
 1.1.0
 - Persistent table sort order

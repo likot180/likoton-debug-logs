@@ -10,7 +10,7 @@ class Likoton_Debug_Logs_Installer {
 
     const TABLE_NAME = 'likoton_debug_logs';
 
-    /** Default colors for known sources */
+    /* Default colors for known sources */
     public static function get_default_source_colors() {
         return [
             'php'       => '#20c997',
@@ -100,20 +100,26 @@ class Likoton_Debug_Logs_Installer {
         global $wpdb;
 
         $defaults = [
-            'search'   => '',
-            'level'    => '',
-            'source'   => '',
-            'page'     => 1,
-            'per_page' => 50,
+            'search'    => '',
+            'level'     => '',
+            'source'    => '',
+            'page'      => 1,
+            'per_page'  => 50,
+            'date_from' => '',
+            'date_to'   => '',
+            'since'     => '',
         ];
         $args = wp_parse_args( $args, $defaults );
 
-        $search   = $args['search'];
-        $level    = sanitize_key( $args['level'] );
-        $source   = sanitize_key( $args['source'] );
-        $page     = max( 1, (int) $args['page'] );
-        $per_page = max( 1, (int) $args['per_page'] );
-        $offset   = ( $page - 1 ) * $per_page;
+        $search    = $args['search'];
+        $level     = sanitize_key( $args['level'] );
+        $source    = sanitize_key( $args['source'] );
+        $page      = max( 1, (int) $args['page'] );
+        $per_page  = max( 1, (int) $args['per_page'] );
+        $offset    = ( $page - 1 ) * $per_page;
+        $date_from = sanitize_text_field( $args['date_from'] );
+        $date_to   = sanitize_text_field( $args['date_to'] );
+        $since     = sanitize_text_field( $args['since'] );
 
         // Table name is built from $wpdb->prefix + a hardcoded constant — safe to use with esc_sql.
         $table = esc_sql( $wpdb->prefix . self::TABLE_NAME );
@@ -154,6 +160,34 @@ class Likoton_Debug_Logs_Installer {
         if ( $source !== '' ) {
             $where_extra .= ' AND source = %s';
             $params[]     = $source;
+        }
+
+        $valid_date = '/^\d{4}-\d{2}-\d{2}$/';
+
+        if ( $date_from !== '' && $date_to !== '' && preg_match( $valid_date, $date_from ) && preg_match( $valid_date, $date_to ) ) {
+            if ( $date_from > $date_to ) {
+                [ $date_from, $date_to ] = [ $date_to, $date_from ];
+            }
+
+            $site_tz = wp_timezone();
+            $utc_tz  = new \DateTimeZone( 'UTC' );
+
+            $range_start = \DateTime::createFromFormat( 'Y-m-d H:i:s', $date_from . ' 00:00:00', $site_tz );
+            $range_end   = \DateTime::createFromFormat( 'Y-m-d H:i:s', $date_to . ' 23:59:59', $site_tz );
+
+            if ( $range_start && $range_end ) {
+                $range_start->setTimezone( $utc_tz );
+                $range_end->setTimezone( $utc_tz );
+
+                $where_extra .= ' AND created_at BETWEEN %s AND %s';
+                $params[]     = $range_start->format( 'Y-m-d H:i:s' );
+                $params[]     = $range_end->format( 'Y-m-d H:i:s' );
+            }
+        }
+
+        if ( $since !== '' && preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $since ) ) {
+            $where_extra .= ' AND created_at >= %s';
+            $params[]     = $since;
         }
 
         $params[] = $per_page;

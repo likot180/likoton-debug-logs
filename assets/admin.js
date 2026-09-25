@@ -52,6 +52,10 @@
 
         const $filters = $('#ldl-filters');
 
+        let scrollPage = 1;
+        let scrollLoading = false;
+        let scrollDone = false;
+
         function reloadTable() {
             const url = $filters.attr('action');
             const data = $filters.serialize();
@@ -62,6 +66,8 @@
                     $('#ldl-logs-table').replaceWith($newTable);
                     applyDefaultDateSort();
                 }
+                scrollPage = 1;
+                scrollDone = false;
             });
         }
 
@@ -73,6 +79,259 @@
             });
             $filters.on('change', 'select', function () {
                 reloadTable();
+            });
+
+            const $dateRange = $('#ldl-date-range');
+            const $dateFrom = $('#ldl-date-from');
+            const $dateTo = $('#ldl-date-to');
+
+            function toggleDateRange() {
+                $dateRange.toggleClass('is-visible', $filters.find('select[name="last"]').val() === 'range');
+            }
+
+            function syncDateConstraints() {
+                if ($dateFrom.val()) {
+                    $dateTo.attr('data-min', $dateFrom.val());
+                }
+                if ($dateTo.val()) {
+                    $dateFrom.attr('data-max', $dateTo.val());
+                }
+            }
+
+            toggleDateRange();
+            syncDateConstraints();
+
+            $filters.on('change', 'select[name="last"]', toggleDateRange);
+
+            $filters.on('change', '.ldl-date-input', function () {
+                syncDateConstraints();
+                reloadTable();
+            });
+
+            initDatePicker();
+        }
+
+        function initDatePicker() {
+            const locale = (window.likotonDebugLogsData && likotonDebugLogsData.locale) || 'en-US';
+            const i18n = (window.likotonDebugLogsData && likotonDebugLogsData.i18n) || {};
+            const labelToday = i18n.today || 'Today';
+            const labelClear = i18n.clear || 'Clear';
+
+            const $panel = $(
+                '<div class="ldl-datepicker">' +
+                    '<div class="ldl-datepicker-header">' +
+                        '<button type="button" class="ldl-datepicker-nav ldl-datepicker-prev">&lsaquo;</button>' +
+                        '<span class="ldl-datepicker-title"></span>' +
+                        '<button type="button" class="ldl-datepicker-nav ldl-datepicker-next">&rsaquo;</button>' +
+                    '</div>' +
+                    '<div class="ldl-datepicker-weekdays"></div>' +
+                    '<div class="ldl-datepicker-days"></div>' +
+                    '<div class="ldl-datepicker-footer">' +
+                        '<button type="button" class="ldl-datepicker-clear"></button>' +
+                        '<button type="button" class="ldl-datepicker-today"></button>' +
+                    '</div>' +
+                '</div>'
+            );
+
+            $panel.find('.ldl-datepicker-clear').text(labelClear);
+            $panel.find('.ldl-datepicker-today').text(labelToday);
+
+            let $activeInput = null;
+            let viewYear;
+            let viewMonth;
+
+            function pad(n) {
+                return (n < 10 ? '0' : '') + n;
+            }
+
+            function toISO(y, m, d) {
+                return y + '-' + pad(m + 1) + '-' + pad(d);
+            }
+
+            function parseISO(str) {
+                const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str || '');
+                if (!parts) {
+                    return null;
+                }
+                return { y: parseInt(parts[1], 10), m: parseInt(parts[2], 10) - 1, d: parseInt(parts[3], 10) };
+            }
+
+            function weekdayNames() {
+                const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
+                const names = [];
+                const base = Date.UTC(2023, 0, 2); // A Monday.
+                for (let i = 0; i < 7; i++) {
+                    names.push(fmt.format(new Date(base + i * 86400000)));
+                }
+                return names;
+            }
+
+            function monthTitle(y, m) {
+                const fmt = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+                return fmt.format(new Date(y, m, 1));
+            }
+
+            function render() {
+                $panel.find('.ldl-datepicker-title').text(monthTitle(viewYear, viewMonth));
+
+                const $wd = $panel.find('.ldl-datepicker-weekdays').empty();
+                weekdayNames().forEach(function (n) {
+                    $('<span></span>').text(n).appendTo($wd);
+                });
+
+                const $days = $panel.find('.ldl-datepicker-days').empty();
+
+                const firstOfMonth = new Date(viewYear, viewMonth, 1);
+                const startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday = 0.
+                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+                const minAttr = $activeInput.attr('data-min') || '';
+                const maxAttr = $activeInput.attr('data-max') || '';
+                const selectedISO = $activeInput.val();
+                const now = new Date();
+                const todayISO = toISO(now.getFullYear(), now.getMonth(), now.getDate());
+
+                for (let i = 0; i < startOffset; i++) {
+                    $('<span class="ldl-datepicker-day is-empty"></span>').appendTo($days);
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const iso = toISO(viewYear, viewMonth, d);
+                    const disabled = (minAttr && iso < minAttr) || (maxAttr && iso > maxAttr);
+                    const $btn = $('<button type="button" class="ldl-datepicker-day"></button>')
+                        .text(d)
+                        .attr('data-date', iso)
+                        .prop('disabled', disabled);
+
+                    if (iso === todayISO) {
+                        $btn.addClass('is-today');
+                    }
+                    if (iso === selectedISO) {
+                        $btn.addClass('is-selected');
+                    }
+
+                    $btn.appendTo($days);
+                }
+            }
+
+            function open($input) {
+                if ($activeInput) {
+                    $activeInput.removeClass('is-active');
+                }
+                $activeInput = $input;
+                const parsed = parseISO($input.val()) || (function () {
+                    const now = new Date();
+                    return { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() };
+                }());
+                viewYear = parsed.y;
+                viewMonth = parsed.m;
+                render();
+
+                const $field = $input.closest('.ldl-date-field');
+                $field.append($panel.detach());
+                $panel.addClass('is-open');
+                $input.addClass('is-active');
+            }
+
+            function close() {
+                $panel.removeClass('is-open');
+                if ($activeInput) {
+                    $activeInput.removeClass('is-active');
+                }
+                $activeInput = null;
+            }
+
+            $(document).on('mousedown', '.ldl-date-input', function (e) {
+                e.preventDefault();
+            });
+
+            $(document).on('click', '.ldl-date-trigger, .ldl-date-input', function (e) {
+                e.preventDefault();
+                if (document.activeElement && document.activeElement !== document.body) {
+                    document.activeElement.blur();
+                }
+                const $field = $(this).closest('.ldl-date-field');
+                const $input = $field.find('.ldl-date-input');
+                if ($activeInput && $activeInput[0] === $input[0] && $panel.hasClass('is-open')) {
+                    close();
+                } else {
+                    open($input);
+                }
+            });
+
+            $(document).on('click', function (e) {
+                if ($panel.hasClass('is-open') && !$(e.target).closest('.ldl-datepicker, .ldl-date-field').length) {
+                    close();
+                }
+            });
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && $panel.hasClass('is-open')) {
+                    close();
+                }
+            });
+
+            $panel.on('click', '.ldl-datepicker-prev', function () {
+                viewMonth--;
+                if (viewMonth < 0) {
+                    viewMonth = 11;
+                    viewYear--;
+                }
+                render();
+            });
+
+            $panel.on('click', '.ldl-datepicker-next', function () {
+                viewMonth++;
+                if (viewMonth > 11) {
+                    viewMonth = 0;
+                    viewYear++;
+                }
+                render();
+            });
+
+            $panel.on('click', '.ldl-datepicker-day:not(:disabled):not(.is-empty)', function () {
+                const iso = $(this).attr('data-date');
+                $activeInput.val(iso).trigger('change');
+                close();
+            });
+
+            $panel.on('click', '.ldl-datepicker-today', function () {
+                const now = new Date();
+                const iso = toISO(now.getFullYear(), now.getMonth(), now.getDate());
+                const minAttr = $activeInput.attr('data-min') || '';
+                const maxAttr = $activeInput.attr('data-max') || '';
+                if ((minAttr && iso < minAttr) || (maxAttr && iso > maxAttr)) {
+                    return;
+                }
+                $activeInput.val(iso).trigger('change');
+                close();
+            });
+
+            $panel.on('click', '.ldl-datepicker-clear', function () {
+                const isFrom = $activeInput.attr('id') === 'ldl-date-from';
+                const $from = $('#ldl-date-from');
+                const $to = $('#ldl-date-to');
+
+                const now = new Date();
+                const today = toISO(now.getFullYear(), now.getMonth(), now.getDate());
+                const yestDate = new Date(now);
+                yestDate.setDate(now.getDate() - 1);
+                const yesterday = toISO(yestDate.getFullYear(), yestDate.getMonth(), yestDate.getDate());
+
+                if (isFrom) {
+                    $from.val(yesterday);
+                    if ($to.val() && $to.val() < yesterday) {
+                        $to.val(today);
+                    }
+                } else {
+                    $to.val(today);
+                    if ($from.val() && $from.val() > today) {
+                        $from.val(yesterday);
+                    }
+                }
+
+                $activeInput.trigger('change');
+                close();
             });
         }
 
@@ -179,10 +438,6 @@
                 $wrapper.animate({ scrollTop: 0 }, 300);
             });
 
-            let page = 1;
-            let loading = false;
-            let done = false;
-
             const $loader = $('<div class="ldl-scroll-loader">Loading…</div>').css({
                 padding: '15px',
                 textAlign: 'center',
@@ -193,33 +448,39 @@
 
             $wrapper.append($loader);
 
+            function filterValue(name) {
+                const found = $filters.serializeArray().find(function (item) {
+                    return item.name === name;
+                });
+                return found ? found.value : '';
+            }
+
             function loadMore() {
-                if (loading || done) return;
+                if (scrollLoading || scrollDone) return;
                 const $tableBody = $('#ldl-logs-table tbody');
                 if (!$tableBody.length) return;
-                loading = true;
+                scrollLoading = true;
                 $loader.css('opacity', 1);
-                const params = new URLSearchParams(window.location.search);
                 $.get(ajaxUrl, {
                     action: 'likoton_debug_logs_load_more_logs',
-                    page_num: page + 1,
-                    s: params.get('s') || '',
-                    level: params.get('level') || '',
-                    source: params.get('source') || '',
-                    last: params.get('last') || 50,
+                    page_num: scrollPage + 1,
+                    s: filterValue('s'),
+                    level: filterValue('level'),
+                    source: filterValue('source'),
+                    last: filterValue('last') || 50,
                     likoton_debug_logs_nonce: likotonDebugLogsData.nonce
                 }, function (response) {
                     if (response.success) {
                         if (response.data.done) {
-                            done = true;
+                            scrollDone = true;
                             $loader.text('✔ All logs loaded');
                             return;
                         }
-                        page++;
+                        scrollPage++;
                         $tableBody.append(response.data.html);
                     }
                 }).always(function () {
-                    loading = false;
+                    scrollLoading = false;
                     $loader.css('opacity', 0);
                 });
             }
@@ -242,6 +503,8 @@
                 data = data.filter(x => x.name !== 'last');
                 data.push({ name: 'last', value: 50 });
             }
+
+            data.push({ name: 'auto_refresh', value: '1' });
 
             const url = $filters.attr('action');
 

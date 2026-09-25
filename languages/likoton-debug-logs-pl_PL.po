@@ -47,6 +47,30 @@ msgstr "Ostatnie 1000"
 msgid "All logs"
 msgstr "Wszystkie logi"
 
+msgid "Date range"
+msgstr "Zakres dat"
+
+msgid "From date"
+msgstr "Od daty"
+
+msgid "To date"
+msgstr "Do daty"
+
+msgid "Choose date"
+msgstr "Wybierz datę"
+
+msgid "Today"
+msgstr "Dzisiaj"
+
+msgid "Last hour"
+msgstr "Ostatnia godzina"
+
+msgid "Last week"
+msgstr "Ostatni tydzień"
+
+msgid "Clear"
+msgstr "Wyczyść"
+
 msgid "Level"
 msgstr "Poziom"
 

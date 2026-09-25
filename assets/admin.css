@@ -73,6 +73,191 @@
     box-sizing: border-box;
 }
 
+/* Date range filter */
+
+.ldl-date-range {
+    display: none;
+    align-items: center;
+    gap: 8px;
+}
+
+.ldl-date-range.is-visible {
+    display: flex;
+}
+
+.ldl-date-range label {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.ldl-date-field {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ldl-date-input {
+    height: 32px;
+    padding: 0 30px 0 8px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+    background-color: #fff !important;
+    cursor: pointer;
+    width: 120px;
+    caret-color: transparent;
+    user-select: none;
+}
+
+input.ldl-date-input:focus {
+    border-color: #ccc !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+input.ldl-date-input.is-active {
+    border-color: var(--wp-admin-theme-color) !important;
+    box-shadow: 0 0 0 var(--wp-admin-border-width-focus, 1.5px) var(--wp-admin-theme-color) !important;
+}
+
+.ldl-date-trigger {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    color: #555;
+}
+
+.ldl-date-trigger .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Custom date picker popup */
+
+.ldl-datepicker {
+    display: none;
+    position: absolute;
+    z-index: 100000;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    width: 240px;
+}
+
+.ldl-datepicker.is-open {
+    display: block;
+}
+
+.ldl-datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ldl-datepicker-title {
+    font-weight: 600;
+    text-transform: capitalize;
+    font-size: 13px;
+}
+
+.ldl-datepicker-nav {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 8px;
+    color: #333;
+    border-radius: 2px;
+}
+
+.ldl-datepicker-nav:hover {
+    background: #f0f0f1;
+}
+
+.ldl-datepicker-weekdays,
+.ldl-datepicker-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+}
+
+.ldl-datepicker-weekdays span {
+    font-size: 11px;
+    color: #777;
+    text-transform: capitalize;
+    padding: 4px 0;
+}
+
+.ldl-datepicker-day {
+    background: none;
+    border: none;
+    padding: 6px 0;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    color: inherit;
+}
+
+.ldl-datepicker-day:hover:not(:disabled) {
+    background: #f0f0f1;
+}
+
+.ldl-datepicker-day.is-empty {
+    cursor: default;
+}
+
+.ldl-datepicker-day.is-today {
+    box-shadow: inset 0 0 0 1px var(--wp-admin-theme-color);
+}
+
+.ldl-datepicker-day.is-selected {
+    background:var(--wp-admin-theme-color-darker-10);
+    color: #fff;
+}
+
+.ldl-datepicker-day:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+
+.ldl-datepicker-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.ldl-datepicker-footer button {
+    background: none;
+    border: none;
+    color: var(--wp-admin-theme-color);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight:600;
+    padding: 0;
+}
+
+.ldl-datepicker-footer button:hover {
+    text-decoration: underline;
+}
+
 /* Badge colors (levels + sources) */
 
 .ldl-badge {
@@ -119,7 +304,7 @@
 /* Table logs */
 
 #ldl-logs-table {
-	border-radius: 2px;
+	border:none;
 	min-width: 600px;
     border-collapse: collapse;
 }
@@ -221,6 +406,8 @@
 /* Forms */
 .ldl-actions {
     display: flex;
+    flex-direction: row;
+    align-items: stretch;
     gap: 10px;
     margin-top: 15px;
 }
@@ -430,10 +617,26 @@ input[type="search"]::-webkit-search-cancel-button {
     .ldl-filters select {
         width: 100%;
     }
-	
-	.ldl-actions {
+
+    .ldl-date-range.is-visible {
         flex-direction: column;
         align-items: stretch;
+        width: 100%;
+    }
+
+    .ldl-date-field,
+    .ldl-date-input {
+        width: 100%;
+    }
+
+    .ldl-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ldl-datepicker {
+        left: auto;
+        right: 0;
     }
 
     .ldl-actions button {

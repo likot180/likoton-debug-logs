@@ -34,9 +34,7 @@ class Likoton_Debug_Logs_Source_Colors {
         add_action( 'admin_head',    [ __CLASS__, 'inject_inline_styles' ] );
     }
 
-    // ---------------------------------------------------------------
     // Helpers
-    // ---------------------------------------------------------------
 
     /** Returns merged array: defaults overridden by saved custom colors */
     public static function get_all_colors() {
@@ -58,10 +56,7 @@ class Likoton_Debug_Logs_Source_Colors {
         return sanitize_key( $source );
     }
 
-    // ---------------------------------------------------------------
-    // Inline CSS injection
-    // ---------------------------------------------------------------
-
+    /** Inline CSS injection */
     public static function inject_inline_styles() {
         $screen = get_current_screen();
         if ( ! $screen || strpos( $screen->id, 'likoton-debug-logs' ) === false ) {
