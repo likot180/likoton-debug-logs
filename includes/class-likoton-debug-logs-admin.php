@@ -34,6 +34,11 @@ class Likoton_Debug_Logs_Admin {
         ];
     }
 
+    /* Allowed values (in seconds) for the "don't log identical errors more often than" setting. 0 = no limit. */
+    public static function get_dedup_intervals() {
+        return [ 0, 10, 30, 60, 900, 1800, 3600 ];
+    }
+
     /* Schedules */
     public static function add_schedules( $schedules ) {
         $schedules['likoton_debug_logs_every_30_minutes'] = [
@@ -66,14 +71,23 @@ class Likoton_Debug_Logs_Admin {
             ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_retention'] ) )
             : '1m';
 
+        $dedup_interval = isset( $_POST['likoton_debug_logs_dedup_interval'] )
+            ? (int) $_POST['likoton_debug_logs_dedup_interval']
+            : 0;
+
+        if ( ! in_array( $dedup_interval, self::get_dedup_intervals(), true ) ) {
+            $dedup_interval = 0;
+        }
+
             $levels = isset( $_POST['likoton_debug_logs_enabled_levels'] )
                 ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['likoton_debug_logs_enabled_levels'] ) )
                 : [];
-                
+
         update_option( 'likoton_debug_logs_enabled_levels', $levels );
         update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
         update_option( 'likoton_debug_logs_capability', $capability );
         update_option( 'likoton_debug_logs_retention', $retention );
+        update_option( 'likoton_debug_logs_dedup_interval', $dedup_interval );
 
         wp_clear_scheduled_hook( 'likoton_debug_logs_cleanup_logs' );
 
@@ -123,6 +137,8 @@ class Likoton_Debug_Logs_Admin {
             }
         }
 
+        [ $orderby, $order ] = self::get_sort_args();
+
         $logs = Likoton_Debug_Logs_Installer::get_logs( [
             'search'   => $search,
             'level'    => $level,
@@ -130,6 +146,8 @@ class Likoton_Debug_Logs_Admin {
             'page'     => $page,
             'per_page' => $per_page,
             'since'    => $time_windowed ? self::compute_since( $last_raw ) : '',
+            'orderby'  => $orderby,
+            'order'    => $order,
         ] );
 
         ob_start();
@@ -278,6 +296,14 @@ class Likoton_Debug_Logs_Admin {
                 ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_retention'] ) )
                 : '1m';
 
+            $dedup_interval = isset( $_POST['likoton_debug_logs_dedup_interval'] )
+                ? (int) $_POST['likoton_debug_logs_dedup_interval']
+                : 0;
+
+            if ( ! in_array( $dedup_interval, self::get_dedup_intervals(), true ) ) {
+                $dedup_interval = 0;
+            }
+
             $levels = isset( $_POST['likoton_debug_logs_enabled_levels'] )
                 ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST['likoton_debug_logs_enabled_levels'] ) )
                 : [];
@@ -286,13 +312,15 @@ class Likoton_Debug_Logs_Admin {
             update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
             update_option( 'likoton_debug_logs_capability', $capability );
             update_option( 'likoton_debug_logs_retention', $retention );
+            update_option( 'likoton_debug_logs_dedup_interval', $dedup_interval );
 
             $enabled_levels = $levels;
         }
 
-        $dark_mode  = (bool) get_option( 'likoton_debug_logs_dark_mode', 0 );
-        $capability = get_option( 'likoton_debug_logs_capability', 'manage_options' );
-        $retention  = get_option( 'likoton_debug_logs_retention', '1m' );
+        $dark_mode      = (bool) get_option( 'likoton_debug_logs_dark_mode', 0 );
+        $capability     = get_option( 'likoton_debug_logs_capability', 'manage_options' );
+        $retention      = get_option( 'likoton_debug_logs_retention', '1m' );
+        $dedup_interval = (int) get_option( 'likoton_debug_logs_dedup_interval', 0 );
 
     ?>
 
@@ -346,6 +374,23 @@ class Likoton_Debug_Logs_Admin {
                                     <?php esc_html_e( 'WP-Cron is disabled. Log cleanup will not run automatically.', 'likoton-debug-logs' ); ?>
                                 </p>
                             <?php endif; ?>
+                        </td>
+                    </tr>
+
+                    <!-- Duplicate log throttling -->
+                    <tr>
+                        <th scope="row"><?php esc_html_e( "Don't log identical errors more often than every:", 'likoton-debug-logs' ); ?></th>
+                        <td>
+                            <select name="likoton_debug_logs_dedup_interval">
+                                <option value="0" <?php selected( $dedup_interval, 0 ); ?>><?php esc_html_e( 'No limit', 'likoton-debug-logs' ); ?></option>
+                                <option value="10" <?php selected( $dedup_interval, 10 ); ?>><?php esc_html_e( '10 seconds', 'likoton-debug-logs' ); ?></option>
+                                <option value="30" <?php selected( $dedup_interval, 30 ); ?>><?php esc_html_e( '30 seconds', 'likoton-debug-logs' ); ?></option>
+                                <option value="60" <?php selected( $dedup_interval, 60 ); ?>><?php esc_html_e( '1 minute', 'likoton-debug-logs' ); ?></option>
+                                <option value="900" <?php selected( $dedup_interval, 900 ); ?>><?php esc_html_e( '15 minutes', 'likoton-debug-logs' ); ?></option>
+                                <option value="1800" <?php selected( $dedup_interval, 1800 ); ?>><?php echo esc_html( _x( '30 minutes', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
+                                <option value="3600" <?php selected( $dedup_interval, 3600 ); ?>><?php echo esc_html( _x( '1 hour', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Skips writing a new log row when the same level, source and message was already logged within this time window.', 'likoton-debug-logs' ); ?></p>
                         </td>
                     </tr>
 
@@ -486,6 +531,28 @@ class Likoton_Debug_Logs_Admin {
         return $since->setTimezone( new \DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
     }
 
+    /* Sanitize the requested sort column/direction against a whitelist. */
+    private static function get_sort_args( $default_orderby = 'created_at', $default_order = 'desc' ) {
+        $allowed_orderby = [ 'id', 'level', 'source', 'message', 'created_at' ];
+
+        if ( ! in_array( $default_orderby, $allowed_orderby, true ) ) {
+            $default_orderby = 'created_at';
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only sort preference, no state change
+        $orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : $default_orderby;
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only sort preference, no state change
+        $order = isset( $_GET['order'] ) ? sanitize_key( wp_unslash( $_GET['order'] ) ) : $default_order;
+
+        if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+            $orderby = 'created_at';
+        }
+
+        $order = ( 'asc' === strtolower( $order ) ) ? 'ASC' : 'DESC';
+
+        return [ $orderby, $order ];
+    }
+
     /* Format UTC date to local WordPress time */
     public static function format_local_date( $utc_string ) {
 
@@ -601,6 +668,8 @@ class Likoton_Debug_Logs_Admin {
             $date_to   = isset( $_GET['date_to'] )   ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) )   : '';
             // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
+            [ $remembered_orderby, $remembered_order ] = self::get_sort_args();
+
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only flag, no state change itself
             $is_auto_refresh = isset( $_GET['auto_refresh'] );
 
@@ -612,6 +681,8 @@ class Likoton_Debug_Logs_Admin {
                     'last'      => $last_raw,
                     'date_from' => $date_from,
                     'date_to'   => $date_to,
+                    'orderby'   => $remembered_orderby,
+                    'order'     => $remembered_order,
                 ] );
             }
         } else {
@@ -624,6 +695,9 @@ class Likoton_Debug_Logs_Admin {
             $source    = isset( $remembered['source'] )    ? $remembered['source']    : '';
             $date_from = isset( $remembered['date_from'] ) ? $remembered['date_from'] : '';
             $date_to   = isset( $remembered['date_to'] )   ? $remembered['date_to']   : '';
+
+            $remembered_orderby = isset( $remembered['orderby'] ) ? $remembered['orderby'] : 'created_at';
+            $remembered_order   = isset( $remembered['order'] )   ? $remembered['order']   : 'desc';
         }
 
         $page = 1;
@@ -653,6 +727,8 @@ class Likoton_Debug_Logs_Admin {
             $date_to = $today_local;
         }
 
+        [ $orderby, $order ] = self::get_sort_args( $remembered_orderby, $remembered_order );
+
         $logs = Likoton_Debug_Logs_Installer::get_logs( [
             'search'    => $search,
             'level'     => $level,
@@ -662,10 +738,14 @@ class Likoton_Debug_Logs_Admin {
             'date_from' => $last_raw === 'range' ? $date_from : '',
             'date_to'   => $last_raw === 'range' ? $date_to : '',
             'since'     => $time_windowed ? self::compute_since( $last_raw ) : '',
+            'orderby'   => $orderby,
+            'order'     => $order,
         ] );
         ?>
         <form id="ldl-filters" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
             <input type="hidden" name="page" value="likoton-debug-logs-logs" />
+            <input type="hidden" name="orderby" id="ldl-orderby" value="<?php echo esc_attr( $orderby ); ?>" />
+            <input type="hidden" name="order" id="ldl-order" value="<?php echo esc_attr( strtolower( $order ) ); ?>" />
 
             <div class="ldl-filters">
 
@@ -734,15 +814,23 @@ class Likoton_Debug_Logs_Admin {
 
             </div>
 
+            <?php
+            $sort_class = function ( $column ) use ( $orderby, $order ) {
+                if ( $column !== $orderby ) {
+                    return '';
+                }
+                return ' sorted-column ' . ( 'ASC' === $order ? 'sorted-asc' : 'sorted-desc' );
+            };
+            ?>
             <div class="ldl-logs-wrapper">
                 <table id="ldl-logs-table" class="wp-list-table widefat fixed striped ldl-logs">
                     <thead>
                     <tr>
-                        <th class="column-id">ID</th>
-                        <th class="column-level"><?php esc_html_e( 'Level', 'likoton-debug-logs' ); ?></th>
-                        <th class="column-source"><?php esc_html_e( 'Source', 'likoton-debug-logs' ); ?></th>
-                        <th class="column-message"><?php esc_html_e( 'Message', 'likoton-debug-logs' ); ?></th>
-                        <th class="column-date"><?php esc_html_e( 'Date', 'likoton-debug-logs' ); ?></th>
+                        <th class="column-id<?php echo esc_attr( $sort_class( 'id' ) ); ?>">ID</th>
+                        <th class="column-level<?php echo esc_attr( $sort_class( 'level' ) ); ?>"><?php esc_html_e( 'Level', 'likoton-debug-logs' ); ?></th>
+                        <th class="column-source<?php echo esc_attr( $sort_class( 'source' ) ); ?>"><?php esc_html_e( 'Source', 'likoton-debug-logs' ); ?></th>
+                        <th class="column-message<?php echo esc_attr( $sort_class( 'message' ) ); ?>"><?php esc_html_e( 'Message', 'likoton-debug-logs' ); ?></th>
+                        <th class="column-date<?php echo esc_attr( $sort_class( 'created_at' ) ); ?>"><?php esc_html_e( 'Date', 'likoton-debug-logs' ); ?></th>
                     </tr>
                     </thead>
                     <tbody>

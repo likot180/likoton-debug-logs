@@ -618,6 +618,10 @@ input[type="search"]::-webkit-search-cancel-button {
         width: 100%;
     }
 
+    .wp-list-table tr {
+        display:table-row;
+    }
+
     .ldl-date-range.is-visible {
         flex-direction: column;
         align-items: stretch;

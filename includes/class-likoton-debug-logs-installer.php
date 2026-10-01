@@ -64,6 +64,10 @@ class Likoton_Debug_Logs_Installer {
                 'recoverable_error', 'user_error', 'user_warning', 'user_notice',
             ] );
 }
+
+        if ( get_option( 'likoton_debug_logs_dedup_interval', null ) === null ) {
+            update_option( 'likoton_debug_logs_dedup_interval', 0 );
+        }
     }
 
     public static function deactivate() {
@@ -108,6 +112,8 @@ class Likoton_Debug_Logs_Installer {
             'date_from' => '',
             'date_to'   => '',
             'since'     => '',
+            'orderby'   => 'created_at',
+            'order'     => 'DESC',
         ];
         $args = wp_parse_args( $args, $defaults );
 
@@ -120,6 +126,11 @@ class Likoton_Debug_Logs_Installer {
         $date_from = sanitize_text_field( $args['date_from'] );
         $date_to   = sanitize_text_field( $args['date_to'] );
         $since     = sanitize_text_field( $args['since'] );
+
+        // Only known columns may reach the ORDER BY clause.
+        $allowed_orderby = [ 'id', 'level', 'source', 'message', 'created_at' ];
+        $orderby         = in_array( $args['orderby'], $allowed_orderby, true ) ? $args['orderby'] : 'created_at';
+        $order           = strtoupper( $args['order'] ) === 'ASC' ? 'ASC' : 'DESC';
 
         // Table name is built from $wpdb->prefix + a hardcoded constant — safe to use with esc_sql.
         $table = esc_sql( $wpdb->prefix . self::TABLE_NAME );
@@ -193,11 +204,18 @@ class Likoton_Debug_Logs_Installer {
         $params[] = $per_page;
         $params[] = $offset;
 
+        // $orderby is whitelisted above; add id as a stable tiebreaker for non-unique columns.
+        $order_sql = "{$orderby} {$order}";
+        if ( 'id' !== $orderby ) {
+            $order_sql .= ", id {$order}";
+        }
+
         // $table: esc_sql( $wpdb->prefix . CONSTANT ) — safe.
         // $levels_in: esc_sql() applied to each element individually — safe.
         // $where_extra: literal SQL with %s/%d placeholders only — safe.
+        // $order_sql: built only from the whitelisted $orderby/$order above — safe.
         // No intermediate variable used — PHPCS tracks variable assignment as unsafe.
-        return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE level IN ( {$levels_in} ){$where_extra} ORDER BY id DESC LIMIT %d OFFSET %d", $params ) );
+        return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE level IN ( {$levels_in} ){$where_extra} ORDER BY {$order_sql} LIMIT %d OFFSET %d", $params ) );
     }
     // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
 

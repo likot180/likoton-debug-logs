@@ -10,44 +10,23 @@
 
         const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
 
-        var SORT_KEY = 'likoton_debug_logs_sort';
+        var SORT_COLUMNS = ['id', 'level', 'source', 'message', 'created_at'];
 
-        function saveSort(colIndex, asc) {
-            try { sessionStorage.setItem(SORT_KEY, JSON.stringify({ col: colIndex, asc: asc })); } catch(e) {}
-        }
-
-        function loadSort() {
-            try { var r = sessionStorage.getItem(SORT_KEY); return r ? JSON.parse(r) : null; } catch(e) { return null; }
-        }
-
-        function applySortToTable(colIndex, asc) {
-            var $table = $('#ldl-logs-table');
-            if (!$table.length) return;
-            var $tbody = $table.find('tbody');
-            var $headers = $table.find('th');
+        // Sorting is done server-side (ORDER BY) and the current orderby/order is
+        // remembered per-user on the server (like the other filters), so the hidden
+        // fields below always already reflect the correct state on page load — no
+        // client-side storage or "fix up after the fact" reload is needed here.
+        function applySortIndicator() {
+            var orderby = $('#ldl-orderby').val() || 'created_at';
+            var order = $('#ldl-order').val() || 'desc';
+            var colIndex = SORT_COLUMNS.indexOf(orderby);
+            if (colIndex === -1) {
+                colIndex = SORT_COLUMNS.length - 1;
+            }
+            var asc = order === 'asc';
+            var $headers = $('#ldl-logs-table th');
             $headers.removeClass('sorted-asc sorted-desc sorted-column');
             $headers.eq(colIndex).addClass(asc ? 'sorted-asc' : 'sorted-desc').addClass('sorted-column');
-            var rows = $tbody.find('tr').get();
-            rows.sort(function (a, b) {
-                var A = $(a).children('td').eq(colIndex).text().toUpperCase();
-                var B = $(b).children('td').eq(colIndex).text().toUpperCase();
-                return asc ? A.localeCompare(B) : B.localeCompare(A);
-            });
-            $.each(rows, function (i, row) { $tbody.append(row); });
-        }
-
-        function applyDefaultDateSort() {
-            var saved = loadSort();
-            if (saved !== null) {
-                applySortToTable(saved.col, saved.asc);
-            } else {
-                var $dateHeader = $('#ldl-logs-table th.column-date');
-                if ($dateHeader.length) {
-                    var colIndex = $dateHeader.index();
-                    applySortToTable(colIndex, false);
-                    saveSort(colIndex, false);
-                }
-            }
         }
 
         const $filters = $('#ldl-filters');
@@ -64,7 +43,7 @@
                 const $newTable = $(html).find('#ldl-logs-table');
                 if ($newTable.length) {
                     $('#ldl-logs-table').replaceWith($newTable);
-                    applyDefaultDateSort();
+                    applySortIndicator();
                 }
                 scrollPage = 1;
                 scrollDone = false;
@@ -356,6 +335,10 @@
                 saveSettings(showToast);
             });
 
+            $settingsForm.on('change', 'select[name="likoton_debug_logs_dedup_interval"]', function () {
+                saveSettings(showToast);
+            });
+
             $settingsForm.on('change', '#likoton_debug_logs_dark_mode', function () {
                 saveSettings(function () {
                     location.reload();
@@ -378,11 +361,13 @@
         $(document).on('click', '#ldl-logs-table th', function () {
             var colIndex = $(this).index();
             var asc = !$(this).hasClass('sorted-asc');
-            applySortToTable(colIndex, asc);
-            saveSort(colIndex, asc);
+            $('#ldl-orderby').val(SORT_COLUMNS[colIndex] || 'created_at');
+            $('#ldl-order').val(asc ? 'asc' : 'desc');
+            applySortIndicator();
+            reloadTable();
         });
 
-        applyDefaultDateSort();
+        applySortIndicator();
 
         function showToast() {
             const $toast = $('#ldl-toast');
@@ -416,7 +401,7 @@
 
         $(document).ajaxComplete(function () {
             initClearSearch();
-            applyDefaultDateSort();
+            applySortIndicator();
         });
 
         const $wrapper = $('.ldl-logs-wrapper');
@@ -468,6 +453,8 @@
                     level: filterValue('level'),
                     source: filterValue('source'),
                     last: filterValue('last') || 50,
+                    orderby: filterValue('orderby'),
+                    order: filterValue('order'),
                     likoton_debug_logs_nonce: likotonDebugLogsData.nonce
                 }, function (response) {
                     if (response.success) {
@@ -514,7 +501,7 @@
                 const $newTable = $(html).find('#ldl-logs-table');
                 if ($newTable.length) {
                     $('#ldl-logs-table').replaceWith($newTable);
-                    applyDefaultDateSort();
+                    applySortIndicator();
                 }
             });
         }

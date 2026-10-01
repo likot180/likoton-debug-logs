@@ -88,30 +88,6 @@ Perfect for developers, administrators and anyone who needs a clear view of what
 
 ---
 
-## Directory Structure
-
-likoton-debug-logs/  
-├── assets/  
-│   ├── admin.css  
-│   ├── admin-dark.css  
-│   └── admin.js  
-├── images/  
-│   ├── buycoffee.png  
-│   └── revolut.png  
-├── includes/  
-│   ├── class-likoton_debug_logs-admin.php  
-│   ├── class-likoton_debug_logs-assets.php  
-│   ├── class-likoton_debug_logs-installer.php  
-│   ├── class-likoton_debug_logs-logger.php
-│   └── class-likoton_debug_logs-source-colors.php  
-├── languages/  
-│   ├── likoton-debug-logs-en_US.po/mo  
-│   ├── likoton-debug-logs-pl_PL.po/mo  
-│   └── likoton-debug-logs.pot  
-└── likoton-debug-logs.php  
-
----
-
 ## Developer API
 
 ### Custom logs
@@ -166,6 +142,9 @@ Yes, each site has its own logs table.
 3. Settings in dark mode
 
 ## Changelog ##
+
+1.3.0
+- Add option to skip writing a new log row when the same level, source and message was already logged
 
 1.2.0
 - A date range selection filter has been added

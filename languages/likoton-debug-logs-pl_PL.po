@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: LiKoToN Debug Logs 1.1.0\n"
+"Project-Id-Version: LiKoToN Debug Logs 1.3.0\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
@@ -136,6 +136,35 @@ msgstr "2 tygodnie"
 
 msgid "1 month"
 msgstr "1 miesiąc"
+
+msgid "Don't log identical errors more often than every:"
+msgstr "Nie zapisuj identycznego błędu częściej niż raz na:"
+
+msgid "No limit"
+msgstr "Bez ograniczeń"
+
+msgid "10 seconds"
+msgstr "10 s"
+
+msgid "30 seconds"
+msgstr "30 s"
+
+msgid "1 minute"
+msgstr "1 min"
+
+msgid "15 minutes"
+msgstr "15 min"
+
+msgctxt "dedup interval"
+msgid "30 minutes"
+msgstr "30 min"
+
+msgctxt "dedup interval"
+msgid "1 hour"
+msgstr "1 godz."
+
+msgid "Skips writing a new log row when the same level, source and message was already logged within this time window."
+msgstr "Pomija zapis nowego wpisu, jeśli ten sam poziom, źródło i wiadomość zostały już zapisane w tym przedziale czasu."
 
 msgid "Administrator (full access)"
 msgstr "Administrator (pełny dostęp)"

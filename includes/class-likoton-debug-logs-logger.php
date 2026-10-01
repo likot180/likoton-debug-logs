@@ -61,6 +61,20 @@ class Likoton_Debug_Logs_Logger {
             }
         }
 
+        $dedup_interval = (int) get_option( 'likoton_debug_logs_dedup_interval', 0 );
+
+        if ( $dedup_interval > 0 ) {
+            // Transients live in wp_options (or an external object cache), never in the
+            // (potentially huge) logs table, so this check stays cheap regardless of log volume.
+            $dedup_key = 'ldl_dedup_' . md5( $level . '|' . $source . '|' . $message );
+
+            if ( false !== get_transient( $dedup_key ) ) {
+                return;
+            }
+
+            set_transient( $dedup_key, 1, $dedup_interval );
+        }
+
         $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
         $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
