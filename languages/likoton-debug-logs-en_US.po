@@ -213,3 +213,36 @@ msgstr "Deselect all"
 
 msgid "Log levels to record"
 msgstr "Log levels to record"
+
+msgid "Logs: %d"
+msgstr "Logs: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "%1$d of %2$d selected"
+
+msgid "Select log %d"
+msgstr "Select log %d"
+
+msgid "Delete selected logs"
+msgstr "Delete selected logs"
+
+msgid "Download selected logs (CSV)"
+msgstr "Download selected logs (CSV)"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Copied to clipboard"
+msgstr "Copied to clipboard"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Delete the selected logs? This cannot be undone."
+
+msgid "Could not delete the selected logs."
+msgstr "Could not delete the selected logs."
+
+msgid "Could not copy to clipboard."
+msgstr "Could not copy to clipboard."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Delete all logs? This cannot be undone."

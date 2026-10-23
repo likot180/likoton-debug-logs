@@ -14,6 +14,7 @@ class Likoton_Debug_Logs_Admin {
         add_action( 'admin_post_likoton_debug_logs_export_logs', [ __CLASS__, 'handle_export_logs' ] );
         add_action( 'wp_ajax_likoton_debug_logs_save_settings', [ __CLASS__, 'ajax_save_settings' ] );
         add_action( 'wp_ajax_likoton_debug_logs_load_more_logs', [ __CLASS__, 'ajax_load_more_logs' ] );
+        add_action( 'wp_ajax_likoton_debug_logs_delete_selected', [ __CLASS__, 'ajax_delete_selected' ] );
         add_filter( 'cron_schedules', [ __CLASS__, 'add_schedules' ] );
 
         if ( ! wp_next_scheduled( 'likoton_debug_logs_cleanup_logs' ) ) {
@@ -152,15 +153,9 @@ class Likoton_Debug_Logs_Admin {
 
         ob_start();
 
-        foreach ( $logs as $row ) : ?>
-            <tr>
-                <td><?php echo (int) $row->id; ?></td>
-                <td><span class="ldl-badge ldl-level-<?php echo esc_attr( $row->level ); ?>"><?php echo esc_html( self::format_level( $row->level ) ); ?></span></td>
-                <td><span class="ldl-badge ldl-source-<?php echo esc_attr( $row->source ); ?>"><?php echo esc_html( $row->source ); ?></span></td>
-                <td><?php echo esc_html( $row->message ); ?></td>
-                <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
-            </tr>
-        <?php endforeach;
+        foreach ( $logs as $row ) {
+            self::render_log_row( $row );
+        }
 
         $html = ob_get_clean();
 
@@ -170,6 +165,60 @@ class Likoton_Debug_Logs_Admin {
         }
 
         wp_send_json_success( [ 'html' => $html, 'done' => false ] );
+    }
+
+    /* Delete the selected log rows (ids sent as one comma-separated field to stay under max_input_vars). */
+    public static function ajax_delete_selected() {
+        check_ajax_referer( 'likoton_debug_logs_delete_selected', 'likoton_debug_logs_nonce' );
+
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
+            wp_send_json_error( null, 403 );
+        }
+
+        $raw_ids = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+        $ids     = self::parse_ids( $raw_ids );
+
+        if ( empty( $ids ) ) {
+            wp_send_json_error( null, 400 );
+        }
+
+        global $wpdb;
+        $table   = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
+        $deleted = 0;
+
+        foreach ( array_chunk( $ids, 500 ) as $chunk ) {
+            $placeholders = implode( ',', array_fill( 0, count( $chunk ), '%d' ) );
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+            $deleted += (int) $wpdb->query( $wpdb->prepare( "DELETE FROM `{$table}` WHERE id IN ( {$placeholders} )", $chunk ) );
+        }
+
+        wp_send_json_success( [ 'deleted' => $deleted ] );
+    }
+
+    /* Parse a comma-separated list of ids into unique positive integers. */
+    private static function parse_ids( $raw ) {
+        $ids = array_map( 'absint', explode( ',', (string) $raw ) );
+        $ids = array_filter( $ids );
+
+        return array_values( array_unique( $ids ) );
+    }
+
+    /* Render a single log table row (shared by the page render and infinite scroll). */
+    private static function render_log_row( $row ) {
+        ?>
+        <tr>
+            <td class="column-cb"><input type="checkbox" class="ldl-row-cb" value="<?php echo (int) $row->id; ?>" aria-label="<?php
+                /* translators: %d: log ID */
+                echo esc_attr( sprintf( __( 'Select log %d', 'likoton-debug-logs' ), (int) $row->id ) );
+            ?>" /></td>
+            <td><?php echo (int) $row->id; ?></td>
+            <td><span class="ldl-badge ldl-level-<?php echo esc_attr( $row->level ); ?>"><?php echo esc_html( self::format_level( $row->level ) ); ?></span></td>
+            <td><span class="ldl-badge ldl-source-<?php echo esc_attr( $row->source ); ?>"><?php echo esc_html( $row->source ); ?></span></td>
+            <td><?php echo esc_html( $row->message ); ?></td>
+            <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
+        </tr>
+        <?php
     }
 
     /* Automatic log cleanup */
@@ -261,6 +310,24 @@ class Likoton_Debug_Logs_Admin {
     /* Render Logs page */
     public static function render_logs_page() {
         ?>
+        <div id="ldl-toast" class="ldl-toast" style="display:none;"></div>
+
+        <div class="ldl-modal" id="ldl-confirm-modal" hidden>
+            <div class="ldl-modal-backdrop" data-ldl-modal-close></div>
+            <div class="ldl-modal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ldl-modal-title" aria-describedby="ldl-modal-message">
+                <div class="ldl-modal-icon" aria-hidden="true"><span class="dashicons dashicons-trash"></span></div>
+                <h2 class="ldl-modal-title" id="ldl-modal-title"><?php esc_html_e( 'Delete selected logs', 'likoton-debug-logs' ); ?></h2>
+                <p class="ldl-modal-message" id="ldl-modal-message"><?php esc_html_e( 'Delete the selected logs? This cannot be undone.', 'likoton-debug-logs' ); ?></p>
+                <p class="ldl-modal-meta" id="ldl-modal-meta"></p>
+                <div class="ldl-modal-actions">
+                    <?php // phpcs:disable WordPress.WP.I18n.MissingArgDomain -- reuse WordPress core translations for the generic button labels. ?>
+                    <button type="button" class="button" id="ldl-modal-cancel" data-ldl-modal-close><?php esc_html_e( 'Cancel' ); ?></button>
+                    <button type="button" class="button button-primary ldl-modal-danger" id="ldl-modal-confirm"><?php esc_html_e( 'Delete' ); ?></button>
+                    <?php // phpcs:enable WordPress.WP.I18n.MissingArgDomain ?>
+                </div>
+            </div>
+        </div>
+
         <div class="wrap">
             <?php
             self::render_header();
@@ -605,12 +672,28 @@ class Likoton_Debug_Logs_Admin {
         global $wpdb;
         $table = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export query, caching not applicable
-        $rows = $wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            "SELECT * FROM `{$table}` ORDER BY id ASC",
-            ARRAY_A
-        );
+        // Optional subset: ids of the rows selected in the logs table (empty = export everything).
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified above via check_admin_referer
+        $raw_ids = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+
+        if ( '' !== $raw_ids ) {
+            $ids  = self::parse_ids( $raw_ids );
+            $rows = [];
+
+            if ( ! empty( $ids ) ) {
+                $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- export query, caching not applicable
+                $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id IN ( {$placeholders} ) ORDER BY id ASC", $ids ), ARRAY_A );
+            }
+        } else {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- export query, caching not applicable
+            $rows = $wpdb->get_results(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT * FROM `{$table}` ORDER BY id ASC",
+                ARRAY_A
+            );
+        }
 
         nocache_headers();
         header( 'Content-Type: text/csv; charset=utf-8' );
@@ -821,11 +904,44 @@ class Likoton_Debug_Logs_Admin {
                 }
                 return ' sorted-column ' . ( 'ASC' === $order ? 'sorted-asc' : 'sorted-desc' );
             };
+            $logs_total = is_array( $logs ) ? count( $logs ) : 0;
             ?>
+            <div class="ldl-toolbar" id="ldl-toolbar">
+                <div class="ldl-toolbar-actions">
+                    <input type="checkbox" id="ldl-select-all" aria-label="<?php esc_attr_e( 'Select all', 'likoton-debug-logs' ); ?>" <?php disabled( 0 === $logs_total ); ?> />
+
+                    <button type="button" class="ldl-bulk-action" id="ldl-bulk-delete" disabled
+                            title="<?php esc_attr_e( 'Delete selected logs', 'likoton-debug-logs' ); ?>"
+                            aria-label="<?php esc_attr_e( 'Delete selected logs', 'likoton-debug-logs' ); ?>">
+                        <span class="dashicons dashicons-trash"></span>
+                    </button>
+
+                    <button type="button" class="ldl-bulk-action" id="ldl-bulk-download" disabled
+                            title="<?php esc_attr_e( 'Download selected logs (CSV)', 'likoton-debug-logs' ); ?>"
+                            aria-label="<?php esc_attr_e( 'Download selected logs (CSV)', 'likoton-debug-logs' ); ?>">
+                        <span class="dashicons dashicons-download"></span>
+                    </button>
+
+                    <button type="button" class="ldl-bulk-action" id="ldl-bulk-copy" disabled
+                            title="<?php esc_attr_e( 'Copy', 'likoton-debug-logs' ); ?>"
+                            aria-label="<?php esc_attr_e( 'Copy', 'likoton-debug-logs' ); ?>">
+                        <span class="dashicons dashicons-admin-page"></span>
+                    </button>
+                </div>
+
+                <div class="ldl-toolbar-info" id="ldl-toolbar-info" aria-live="polite">
+                    <?php
+                    /* translators: %d: number of logs shown in the table */
+                    echo esc_html( sprintf( __( 'Logs: %d', 'likoton-debug-logs' ), $logs_total ) );
+                    ?>
+                </div>
+            </div>
+
             <div class="ldl-logs-wrapper">
                 <table id="ldl-logs-table" class="wp-list-table widefat fixed striped ldl-logs">
                     <thead>
                     <tr>
+                        <th class="column-cb"></th>
                         <th class="column-id<?php echo esc_attr( $sort_class( 'id' ) ); ?>">ID</th>
                         <th class="column-level<?php echo esc_attr( $sort_class( 'level' ) ); ?>"><?php esc_html_e( 'Level', 'likoton-debug-logs' ); ?></th>
                         <th class="column-source<?php echo esc_attr( $sort_class( 'source' ) ); ?>"><?php esc_html_e( 'Source', 'likoton-debug-logs' ); ?></th>
@@ -836,25 +952,11 @@ class Likoton_Debug_Logs_Admin {
                     <tbody>
                     <?php if ( $logs ) : ?>
                         <?php foreach ( $logs as $row ) : ?>
-                            <tr>
-                                <td><?php echo (int) $row->id; ?></td>
-                                <td>
-                                    <span class="ldl-badge ldl-level-<?php echo esc_attr( $row->level ); ?>">
-                                        <?php echo esc_html( self::format_level( $row->level ) ); ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="ldl-badge ldl-source-<?php echo esc_attr( $row->source ); ?>">
-                                        <?php echo esc_html( $row->source ); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo esc_html( $row->message ); ?></td>
-                                <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
-                            </tr>
+                            <?php self::render_log_row( $row ); ?>
                         <?php endforeach; ?>
                     <?php else : ?>
                         <tr>
-                            <td colspan="5"><?php esc_html_e( 'No logs found.', 'likoton-debug-logs' ); ?></td>
+                            <td colspan="6"><?php esc_html_e( 'No logs found.', 'likoton-debug-logs' ); ?></td>
                         </tr>
                     <?php endif; ?>
                     </tbody>

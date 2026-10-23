@@ -213,3 +213,36 @@ msgstr "Tout désélectionner"
 
 msgid "Log levels to record"
 msgstr "Niveaux de journalisation à enregistrer"
+
+msgid "Logs: %d"
+msgstr "Journaux : %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "%1$d sur %2$d sélectionnés"
+
+msgid "Select log %d"
+msgstr "Sélectionner le journal %d"
+
+msgid "Delete selected logs"
+msgstr "Supprimer les journaux sélectionnés"
+
+msgid "Download selected logs (CSV)"
+msgstr "Télécharger les journaux sélectionnés (CSV)"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Copied to clipboard"
+msgstr "Copié dans le presse-papiers"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Supprimer les journaux sélectionnés ? Cette action est irréversible."
+
+msgid "Could not delete the selected logs."
+msgstr "Impossible de supprimer les journaux sélectionnés."
+
+msgid "Could not copy to clipboard."
+msgstr "Impossible de copier dans le presse-papiers."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Supprimer tous les journaux ? Cette action est irréversible."

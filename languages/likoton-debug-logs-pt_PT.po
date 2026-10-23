@@ -213,3 +213,36 @@ msgstr "Desmarcar tudo"
 
 msgid "Log levels to record"
 msgstr "Níveis de log a registrar"
+
+msgid "Logs: %d"
+msgstr "Registos: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "%1$d de %2$d selecionados"
+
+msgid "Select log %d"
+msgstr "Selecionar registo %d"
+
+msgid "Delete selected logs"
+msgstr "Eliminar registos selecionados"
+
+msgid "Download selected logs (CSV)"
+msgstr "Transferir registos selecionados (CSV)"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copied to clipboard"
+msgstr "Copiado para a área de transferência"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Eliminar os registos selecionados? Esta ação não pode ser anulada."
+
+msgid "Could not delete the selected logs."
+msgstr "Não foi possível eliminar os registos selecionados."
+
+msgid "Could not copy to clipboard."
+msgstr "Não foi possível copiar para a área de transferência."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Eliminar todos os registos? Esta ação não pode ser anulada."

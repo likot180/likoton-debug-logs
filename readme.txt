@@ -3,7 +3,7 @@ Contributors: likoton
 Tags: logs, debug, developer, tools, php
 Requires at least: 6.0
 Tested up to: 7.1
-Stable tag: 1.3.0
+Stable tag: 2.0.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 
@@ -142,6 +142,9 @@ Yes, each site has its own logs table.
 3. Settings in dark mode
 
 ## Changelog ##
+
+2.0.0
+- Added support for deleting, downloading, and copying selected logs via bulk operations
 
 1.3.0
 - Add option to skip writing a new log row when the same level, source and message was already logged

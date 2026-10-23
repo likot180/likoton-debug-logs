@@ -278,3 +278,50 @@ msgstr ""
 #: includes/class-likoton-debug-logs-admin.php
 msgid "Log levels to record"
 msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+#, php-format
+msgid "Logs: %d"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+#, php-format
+msgid "%1$d of %2$d selected"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+#, php-format
+msgid "Select log %d"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Delete selected logs"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Download selected logs (CSV)"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-admin.php
+msgid "Copy"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Copied to clipboard"
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Delete the selected logs? This cannot be undone."
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Could not delete the selected logs."
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Could not copy to clipboard."
+msgstr ""
+
+#: includes/class-likoton-debug-logs-assets.php
+msgid "Delete all logs? This cannot be undone."
+msgstr ""

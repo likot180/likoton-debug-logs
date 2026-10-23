@@ -10,7 +10,8 @@
 
         const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
 
-        var SORT_COLUMNS = ['id', 'level', 'source', 'message', 'created_at'];
+        // Index 0 is the (non-sortable) checkbox column.
+        var SORT_COLUMNS = ['', 'id', 'level', 'source', 'message', 'created_at'];
 
         // Sorting is done server-side (ORDER BY) and the current orderby/order is
         // remembered per-user on the server (like the other filters), so the hidden
@@ -35,11 +36,25 @@
         let scrollLoading = false;
         let scrollDone = false;
 
+        // Bumped on every manual reload; responses from older requests are ignored so a late
+        // response can never overwrite the table (and reset the checkboxes) after the user acted on it.
+        let tableGeneration = 0;
+
+        // While a reload is in flight the old rows are about to be replaced, so block clicks on them
+        // (otherwise a checkbox toggles and is then reset by the arriving table).
+        function setTableLoading(loading) {
+            $('#ldl-toolbar, #ldl-logs-table').toggleClass('is-loading', loading);
+        }
+
         function reloadTable() {
+            const generation = ++tableGeneration;
             const url = $filters.attr('action');
             const data = $filters.serialize();
+
+            setTableLoading(true);
+
             $.get(url, data, function (html) {
-                if (!pageIsAlive) return;
+                if (!pageIsAlive || generation !== tableGeneration) return;
                 const $newTable = $(html).find('#ldl-logs-table');
                 if ($newTable.length) {
                     $('#ldl-logs-table').replaceWith($newTable);
@@ -47,6 +62,10 @@
                 }
                 scrollPage = 1;
                 scrollDone = false;
+            }).always(function () {
+                if (generation === tableGeneration) {
+                    setTableLoading(false);
+                }
             });
         }
 
@@ -359,6 +378,9 @@
         }
 
         $(document).on('click', '#ldl-logs-table th', function () {
+            if ($(this).hasClass('column-cb')) {
+                return;
+            }
             var colIndex = $(this).index();
             var asc = !$(this).hasClass('sorted-asc');
             $('#ldl-orderby').val(SORT_COLUMNS[colIndex] || 'created_at');
@@ -369,8 +391,236 @@
 
         applySortIndicator();
 
-        function showToast() {
+        // ---- Row selection and bulk actions (delete / download CSV / copy) ----
+
+        const bulkStrings = (window.likotonDebugLogsData && likotonDebugLogsData.i18n) || {};
+
+        function formatString(template) {
+            const args = Array.prototype.slice.call(arguments, 1);
+            let next = 0;
+            return String(template).replace(/%(\d+\$)?d/g, function (match, position) {
+                return position ? args[parseInt(position, 10) - 1] : args[next++];
+            });
+        }
+
+        function selectedBoxes() {
+            return $('#ldl-logs-table tbody .ldl-row-cb:checked');
+        }
+
+        function selectedIds() {
+            return selectedBoxes().map(function () { return this.value; }).get();
+        }
+
+        function updateSelectionUI() {
+            if (!$('#ldl-toolbar').length) {
+                return;
+            }
+
+            const $boxes = $('#ldl-logs-table tbody .ldl-row-cb');
+            const total = $boxes.length;
+            const selected = $boxes.filter(':checked').length;
+
+            $('#ldl-select-all').prop({
+                checked: total > 0 && selected === total,
+                indeterminate: selected > 0 && selected < total,
+                disabled: total === 0
+            });
+            $('.ldl-bulk-action').prop('disabled', selected === 0);
+            $('#ldl-toolbar-info').text(selected > 0
+                ? formatString(bulkStrings.selectedCount || '%1$d of %2$d selected', selected, total)
+                : formatString(bulkStrings.logsCount || 'Logs: %d', total));
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
+
+            return new Promise(function (resolve, reject) {
+                const area = document.createElement('textarea');
+                area.value = text;
+                area.setAttribute('readonly', '');
+                area.style.position = 'fixed';
+                area.style.opacity = '0';
+                document.body.appendChild(area);
+                area.select();
+                let ok = false;
+                try {
+                    ok = document.execCommand('copy');
+                } catch (e) {}
+                document.body.removeChild(area);
+                return ok ? resolve() : reject();
+            });
+        }
+
+        // After a mouse "deselect" (all rows or a single row) drop the focus ring; keyboard users (detail === 0) keep their focus.
+        $(document).on('click', '#ldl-select-all, .ldl-row-cb', function (e) {
+            if (!this.checked && e.detail > 0) {
+                this.blur();
+            }
+        });
+
+        $(document).on('change', '#ldl-select-all', function () {
+            $('#ldl-logs-table tbody .ldl-row-cb').prop('checked', this.checked);
+            updateSelectionUI();
+        });
+
+        $(document).on('change', '.ldl-row-cb', updateSelectionUI);
+
+        // Default (selected rows) texts are rendered server-side in the modal markup.
+        const modalDefaults = {
+            title: $('#ldl-modal-title').text(),
+            message: $('#ldl-modal-message').text()
+        };
+
+        // Styled replacement for window.confirm(); resolves true on "Delete", false otherwise.
+        // options: { title, message, meta } — each falls back to the default / empty.
+        function confirmDelete(options) {
+            options = options || {};
+
+            return new Promise(function (resolve) {
+                const $modal = $('#ldl-confirm-modal');
+                const opener = document.activeElement;
+                const $focusable = $modal.find('button');
+
+                $('#ldl-modal-title').text(options.title || modalDefaults.title);
+                $('#ldl-modal-message').text(options.message || modalDefaults.message);
+                $('#ldl-modal-meta').text(options.meta || '');
+                $modal.prop('hidden', false);
+                $('#ldl-modal-cancel').trigger('focus');
+
+                const close = function (result) {
+                    $modal.prop('hidden', true).off('.ldlModal');
+                    $(document).off('keydown.ldlModal');
+                    if (opener && typeof opener.focus === 'function') {
+                        opener.focus();
+                    }
+                    resolve(result);
+                };
+
+                $modal.on('click.ldlModal', '[data-ldl-modal-close]', function () {
+                    close(false);
+                });
+
+                $modal.on('click.ldlModal', '#ldl-modal-confirm', function () {
+                    close(true);
+                });
+
+                $(document).on('keydown.ldlModal', function (e) {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        close(false);
+                        return;
+                    }
+
+                    if (e.key === 'Tab') {
+                        const first = $focusable.first()[0];
+                        const last = $focusable.last()[0];
+                        if (e.shiftKey && document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        } else if (!e.shiftKey && document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+                });
+            });
+        }
+
+        function deleteSelected(ids) {
+            const failed = function () {
+                window.alert(bulkStrings.deleteFailed || 'Could not delete the selected logs.');
+                updateSelectionUI();
+            };
+
+            $('.ldl-bulk-action').prop('disabled', true);
+
+            $.post(ajaxUrl, {
+                action: 'likoton_debug_logs_delete_selected',
+                likoton_debug_logs_nonce: likotonDebugLogsData.deleteNonce,
+                ids: ids.join(',')
+            }).done(function (response) {
+                if (!response || !response.success) {
+                    failed();
+                    return;
+                }
+                selectedBoxes().closest('tr').remove();
+                updateSelectionUI();
+                reloadTable();
+            }).fail(failed);
+        }
+
+        $(document).on('click', '#ldl-bulk-delete', function () {
+            const ids = selectedIds();
+            if (!ids.length) {
+                return;
+            }
+
+            const total = $('#ldl-logs-table tbody .ldl-row-cb').length;
+
+            confirmDelete({
+                meta: formatString(bulkStrings.selectedCount || '%1$d of %2$d selected', ids.length, total)
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    deleteSelected(ids);
+                }
+            });
+        });
+
+        // "Delete all logs" is a regular form post; ask first, then submit it natively.
+        $(document).on('submit', '.ldl-delete-form', function (e) {
+            e.preventDefault();
+            const form = this;
+
+            confirmDelete({
+                title: bulkStrings.deleteAllTitle,
+                message: bulkStrings.deleteAllConfirm
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    form.submit();
+                }
+            });
+        });
+
+        $(document).on('click', '#ldl-bulk-download', function () {
+            const ids = selectedIds();
+            if (!ids.length) {
+                return;
+            }
+
+            const $form = $('<form method="post" style="display:none;"></form>').attr('action', likotonDebugLogsData.exportUrl);
+            $('<input type="hidden" name="action">').val('likoton_debug_logs_export_logs').appendTo($form);
+            $('<input type="hidden" name="likoton_debug_logs_export_logs_nonce">').val(likotonDebugLogsData.exportNonce).appendTo($form);
+            $('<input type="hidden" name="ids">').val(ids.join(',')).appendTo($form);
+            $('body').append($form);
+            $form[0].submit();
+            setTimeout(function () { $form.remove(); }, 1000);
+        });
+
+        $(document).on('click', '#ldl-bulk-copy', function () {
+            const text = selectedBoxes().closest('tr').map(function () {
+                return $(this).children('td').not('.column-cb').map(function () {
+                    return $(this).text().replace(/\s+/g, ' ').trim();
+                }).get().join('\t');
+            }).get().join('\n');
+
+            if (!text) {
+                return;
+            }
+
+            copyToClipboard(text).then(function () {
+                showToast(bulkStrings.copied || 'Copied to clipboard');
+            }).catch(function () {
+                window.alert(bulkStrings.copyFailed || 'Could not copy to clipboard.');
+            });
+        });
+
+        function showToast(message) {
             const $toast = $('#ldl-toast');
+            if (typeof message === 'string') {
+                $toast.text('✔ ' + message);
+            }
             $toast.addClass('show').show();
             setTimeout(() => {
                 $toast.removeClass('show');
@@ -402,6 +652,7 @@
         $(document).ajaxComplete(function () {
             initClearSearch();
             applySortIndicator();
+            updateSelectionUI();
         });
 
         const $wrapper = $('.ldl-logs-wrapper');
@@ -444,6 +695,7 @@
                 if (scrollLoading || scrollDone) return;
                 const $tableBody = $('#ldl-logs-table tbody');
                 if (!$tableBody.length) return;
+                const generation = tableGeneration;
                 scrollLoading = true;
                 $loader.css('opacity', 1);
                 $.get(ajaxUrl, {
@@ -457,6 +709,8 @@
                     order: filterValue('order'),
                     likoton_debug_logs_nonce: likotonDebugLogsData.nonce
                 }, function (response) {
+                    // The table was reloaded meanwhile: this page belongs to the old filters/order.
+                    if (generation !== tableGeneration) return;
                     if (response.success) {
                         if (response.data.done) {
                             scrollDone = true;
@@ -494,21 +748,30 @@
             data.push({ name: 'auto_refresh', value: '1' });
 
             const url = $filters.attr('action');
+            const generation = tableGeneration;
 
             $.get(url, data, function (html) {
-                if (!pageIsAlive) return;
+                if (!pageIsAlive || generation !== tableGeneration) return;
+                // Rows were picked while the request was in flight: keep the user's table.
+                if (selectedBoxes().length) return;
 
                 const $newTable = $(html).find('#ldl-logs-table');
-                if ($newTable.length) {
-                    $('#ldl-logs-table').replaceWith($newTable);
-                    applySortIndicator();
-                }
+                if (!$newTable.length) return;
+
+                // Nothing new: leave the DOM alone so clicks aren't lost to a pointless re-render.
+                // (innerHTML ignores the checkboxes' checked state, which is a property.)
+                if ($newTable.find('tbody').html() === $('#ldl-logs-table tbody').html()) return;
+
+                $('#ldl-logs-table').replaceWith($newTable);
+                applySortIndicator();
             });
         }
 
         function autoRefreshIfAtBottom() {
             const wrapper = document.querySelector('.ldl-logs-wrapper');
             if (!wrapper) return;
+            // Don't swap the table out from under the user while rows are selected.
+            if (selectedBoxes().length) return;
             const scrollBottom = wrapper.scrollHeight - wrapper.scrollTop - wrapper.clientHeight;
             if (scrollBottom < 50) {
                 autoRefreshLogs();

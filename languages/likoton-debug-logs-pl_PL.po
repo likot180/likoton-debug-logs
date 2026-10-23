@@ -198,3 +198,36 @@ msgstr "Odznacz wszystko"
 
 msgid "Log levels to record"
 msgstr "Poziomy logów do zapisywania"
+
+msgid "Logs: %d"
+msgstr "Logi: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "Zaznaczono %1$d z %2$d"
+
+msgid "Select log %d"
+msgstr "Zaznacz log %d"
+
+msgid "Delete selected logs"
+msgstr "Usuń zaznaczone logi"
+
+msgid "Download selected logs (CSV)"
+msgstr "Pobierz zaznaczone logi (CSV)"
+
+msgid "Copy"
+msgstr "Kopiuj"
+
+msgid "Copied to clipboard"
+msgstr "Skopiowano do schowka"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Usunąć zaznaczone logi? Tej operacji nie można cofnąć."
+
+msgid "Could not delete the selected logs."
+msgstr "Nie udało się usunąć zaznaczonych logów."
+
+msgid "Could not copy to clipboard."
+msgstr "Nie udało się skopiować do schowka."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Usunąć wszystkie logi? Tej operacji nie można cofnąć."

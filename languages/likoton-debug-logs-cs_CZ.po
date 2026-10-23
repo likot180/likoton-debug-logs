@@ -213,3 +213,36 @@ msgstr "Zrušit výběr"
 
 msgid "Log levels to record"
 msgstr "Úrovně logů k zaznamenání"
+
+msgid "Logs: %d"
+msgstr "Záznamy: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "Vybráno %1$d z %2$d"
+
+msgid "Select log %d"
+msgstr "Vybrat záznam %d"
+
+msgid "Delete selected logs"
+msgstr "Smazat vybrané záznamy"
+
+msgid "Download selected logs (CSV)"
+msgstr "Stáhnout vybrané záznamy (CSV)"
+
+msgid "Copy"
+msgstr "Kopírovat"
+
+msgid "Copied to clipboard"
+msgstr "Zkopírováno do schránky"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Smazat vybrané záznamy? Tuto akci nelze vrátit zpět."
+
+msgid "Could not delete the selected logs."
+msgstr "Vybrané záznamy se nepodařilo smazat."
+
+msgid "Could not copy to clipboard."
+msgstr "Kopírování do schránky se nezdařilo."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Smazat všechny záznamy? Tuto akci nelze vrátit zpět."

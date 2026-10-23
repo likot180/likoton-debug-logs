@@ -213,3 +213,36 @@ msgstr "Deseleccionar todo"
 
 msgid "Log levels to record"
 msgstr "Niveles de registro a guardar"
+
+msgid "Logs: %d"
+msgstr "Registros: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "%1$d de %2$d seleccionados"
+
+msgid "Select log %d"
+msgstr "Seleccionar registro %d"
+
+msgid "Delete selected logs"
+msgstr "Eliminar registros seleccionados"
+
+msgid "Download selected logs (CSV)"
+msgstr "Descargar registros seleccionados (CSV)"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copied to clipboard"
+msgstr "Copiado al portapapeles"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "¿Eliminar los registros seleccionados? Esta acción no se puede deshacer."
+
+msgid "Could not delete the selected logs."
+msgstr "No se pudieron eliminar los registros seleccionados."
+
+msgid "Could not copy to clipboard."
+msgstr "No se pudo copiar al portapapeles."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "¿Eliminar todos los registros? Esta acción no se puede deshacer."

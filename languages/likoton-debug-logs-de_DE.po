@@ -213,3 +213,36 @@ msgstr "Auswahl aufheben"
 
 msgid "Log levels to record"
 msgstr "Zu protokollierende Log‑Stufen"
+
+msgid "Logs: %d"
+msgstr "Protokolle: %d"
+
+msgid "%1$d of %2$d selected"
+msgstr "%1$d von %2$d ausgewählt"
+
+msgid "Select log %d"
+msgstr "Protokoll %d auswählen"
+
+msgid "Delete selected logs"
+msgstr "Ausgewählte Protokolle löschen"
+
+msgid "Download selected logs (CSV)"
+msgstr "Ausgewählte Protokolle herunterladen (CSV)"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Copied to clipboard"
+msgstr "In die Zwischenablage kopiert"
+
+msgid "Delete the selected logs? This cannot be undone."
+msgstr "Ausgewählte Protokolle löschen? Dies kann nicht rückgängig gemacht werden."
+
+msgid "Could not delete the selected logs."
+msgstr "Die ausgewählten Protokolle konnten nicht gelöscht werden."
+
+msgid "Could not copy to clipboard."
+msgstr "Kopieren in die Zwischenablage fehlgeschlagen."
+
+msgid "Delete all logs? This cannot be undone."
+msgstr "Alle Protokolle löschen? Dies kann nicht rückgängig gemacht werden."
