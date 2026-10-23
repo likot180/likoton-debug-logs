@@ -13,6 +13,10 @@ body.likoton-debug-logs-logs_page_likoton-debug-logs-settings {
     border-color: #2c3338;
 }
 
+.ldl-logs-wrapper {
+    border-color: #2c3338;
+}
+
 .ldl-logs.wp-list-table th,
 .ldl-logs.wp-list-table td {
     border-color: #2c3338;
