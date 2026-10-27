@@ -6,6 +6,11 @@
 
         window.addEventListener('beforeunload', () => {
             pageIsAlive = false;
+            // A file download (e.g. the CSV export) or a cancelled navigation fires beforeunload
+            // but keeps this page alive, so the flag must not stay false forever.
+            setTimeout(() => {
+                pageIsAlive = true;
+            }, 0);
         });
 
         const ajaxUrl = window.ajaxurl || (window.wp && wp.ajax && wp.ajax.settings && wp.ajax.settings.url);
