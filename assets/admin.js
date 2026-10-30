@@ -664,15 +664,13 @@
 
         if ($wrapper.length) {
 
+            // Appended to the container around the scroller (not into it), so horizontal
+            // scrolling of the table can't carry the button along.
             const $btnTop = $('<div class="ldl-go-top">↑</div>');
-            $wrapper.append($btnTop);
+            $wrapper.parent().append($btnTop);
 
             $wrapper.on('scroll', function () {
-                if (this.scrollTop > 200) {
-                    $btnTop.css('opacity', 1);
-                } else {
-                    $btnTop.css('opacity', 0);
-                }
+                $btnTop.toggleClass('is-visible', this.scrollTop > 200);
             });
 
             $btnTop.on('click', function () {

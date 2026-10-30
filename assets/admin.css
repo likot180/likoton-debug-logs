@@ -309,6 +309,26 @@ input.ldl-date-input.is-active {
     border-collapse: collapse;
 }
 
+/* Small screens: a wider, horizontally scrollable table beats a squeezed Message column
+   (fixed layout would otherwise leave it ~30px wide and wrap text per character). */
+@media (max-width: 782px) {
+    #ldl-logs-table {
+        min-width: 900px;
+    }
+
+    /* WordPress turns every .wp-list-table into stacked flex rows/blocks below 782px; this
+       table has real columns, so keep the normal table display (otherwise cells collapse and
+       the row background shows through). */
+    #ldl-logs-table tr {
+        display: table-row;
+    }
+
+    #ldl-logs-table th,
+    #ldl-logs-table td {
+        display: table-cell;
+    }
+}
+
 /* Confirmation modal */
 .ldl-modal {
     position: fixed;
@@ -774,12 +794,16 @@ input.ldl-date-input.is-active {
     text-align: center;
 }
 
-/* Go to top button */
+/* Go to top button: lives in the container *around* the scrolling wrapper, so horizontal
+   scrolling of the table never moves it and it stays at the container's right edge. */
+.ldl-logs-container {
+    position: relative;
+}
+
 .ldl-go-top {
-    position: sticky;
-    bottom: 10px;
-    margin-left: auto;
-    right: 20px;
+    position: absolute;
+    bottom: 14px;
+    right: 24px;
     width: 40px;
     height: 40px;
     background: #2271b1;
@@ -791,10 +815,15 @@ input.ldl-date-input.is-active {
     cursor: pointer;
     font-size: 20px;
     opacity: 0;
+    pointer-events: none;
     transition: opacity .25s ease, transform .15s ease;
     z-index: 10;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    align-self: flex-end;
+}
+
+.ldl-go-top.is-visible {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .ldl-go-top:hover {
@@ -823,10 +852,6 @@ input[type="search"]::-webkit-search-cancel-button {
     .ldl-filters input[type="search"],
     .ldl-filters select {
         width: 100%;
-    }
-
-    .wp-list-table tr {
-        display:table-row;
     }
 
     .ldl-date-range.is-visible {

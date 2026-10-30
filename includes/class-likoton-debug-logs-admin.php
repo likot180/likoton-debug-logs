@@ -937,6 +937,7 @@ class Likoton_Debug_Logs_Admin {
                 </div>
             </div>
 
+            <div class="ldl-logs-container">
             <div class="ldl-logs-wrapper">
                 <table id="ldl-logs-table" class="wp-list-table widefat fixed striped ldl-logs">
                     <thead>
@@ -961,6 +962,7 @@ class Likoton_Debug_Logs_Admin {
                     <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
             </div>
         </form>
 

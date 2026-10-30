@@ -23,6 +23,11 @@ body.likoton-debug-logs-logs_page_likoton-debug-logs-settings {
     color: #f0f0f1;
 }
 
+/* WP's .striped paints odd rows #f6f7f7; the cells carry the dark colours, so never let it show. */
+.ldl-logs.wp-list-table.striped > tbody > tr {
+    background-color: transparent;
+}
+
 .ldl-logs.wp-list-table tbody tr:nth-child(odd) td {
     background-color: #1f2933;
 }

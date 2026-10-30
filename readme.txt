@@ -143,6 +143,9 @@ Yes, each site has its own logs table.
 
 ## Changelog ##
 
+2.0.1
+- Improved the appearance of the table on small screens
+
 2.0.0
 - Added support for deleting, downloading, and copying selected logs via bulk operations
 
