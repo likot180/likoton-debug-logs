@@ -13,7 +13,8 @@ body.likoton-debug-logs-logs_page_likoton-debug-logs-settings {
     border-color: #2c3338;
 }
 
-.ldl-logs-wrapper {
+.ldl-logs-wrapper,
+.ldl-ignored-wrapper {
     border-color: #2c3338;
 }
 
@@ -241,19 +242,23 @@ input.ldl-date-input.is-active {
 body.toplevel_page_likoton-debug-logs-logs,
 body.likoton-debug-logs-logs_page_likoton-debug-logs-settings,
 body[class*="likoton-debug-logs-logs"],
-body[class*="likoton-debug-logs-settings"] {
+body[class*="likoton-debug-logs-settings"],
+body[class*="likoton-debug-logs-ignored"] {
     background-color: #1d2327 !important;
     color: #f0f0f1 !important;
 }
 
 /* Dark mode sorting indicators */
 
-#ldl-logs-table th.sorted-column {
+#ldl-logs-table th.sorted-column,
+#ldl-ignored-table th.sorted-column {
     background-color: #2c3338;
 }
 
 #ldl-logs-table th.sorted-asc::after,
-#ldl-logs-table th.sorted-desc::after {
+#ldl-logs-table th.sorted-desc::after,
+#ldl-ignored-table th.sorted-asc::after,
+#ldl-ignored-table th.sorted-desc::after {
     color: #f0f0f1;
 }
 

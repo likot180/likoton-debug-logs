@@ -2,12 +2,12 @@
 Contributors: likoton
 Tags: logs, debug, developer, tools, php
 Requires at least: 6.0
-Tested up to: 7.1
-Stable tag: 2.0.0
+Tested up to: 7.2
+Stable tag: 2.1.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 
-A lightweight debugging plugin that collects PHP, WordPress, REST API and login logs with filters, dark mode, infinite scroll and CSV export.
+A lightweight debugging plugin that collects PHP, WordPress, REST API and login logs with filters, date range, bulk actions, an ignore list, dark mode and CSV export.
 
 == Description ==
 
@@ -25,6 +25,10 @@ It includes a clean log viewer with:
 - Infinite scroll  
 - Client-side sorting  
 - Search, level, source and time filters  
+- Date range filter with a built-in date picker  
+- Bulk actions: delete, download (CSV) and copy selected logs  
+- Persistent table sort order  
+- Ignore list for recurring log entries  
 - Color-coded badges  
 - Dark mode  
 - CSV export (with UTC and local timestamps)  
@@ -47,9 +51,20 @@ Perfect for developers, administrators and anyone who needs a clear view of what
 - AJAX live filtering  
 - Infinite scroll  
 - Search, level, source, time 
-- Client-side sorting  
+- Client-side sorting (remembered between visits)  
+- Date range filter with a built-in date picker  
+- Bulk actions: delete, download (CSV) and copy selected logs  
 - Color-coded badges  
 - Responsive table  
+
+### Ignore List
+- Select recurring log entries and add them to the ignore list  
+- Matching logs are no longer written to the database; only their occurrences are counted  
+- Dedicated "Ignored" page with search, level/source filters, sorting and bulk removal  
+- Enabled in Settings (the "Ignored" submenu appears only when the option is on)  
+
+### Duplicate Throttling
+- Skip writing a new row when the same level, source and message was logged within a chosen interval  
 
 ### Dark Mode
 - WordPress 7-style toggle  
@@ -61,6 +76,10 @@ Perfect for developers, administrators and anyone who needs a clear view of what
 - Capability required to view logs  
 - Auto-save via AJAX with toast notification  
 - Selectable log levels (only enabled levels are shown in the viewer)  
+- Per-level colors in the Log Levels control  
+- Interface language selection (English, Polski, Deutsch, Français, Español, Čeština, Slovenčina, Português), independent of the WordPress locale  
+- Duplicate log interval  
+- Ignore selected records toggle  
 
 ### Automatic Cleanup
 - WP-Cron based  
@@ -93,6 +112,16 @@ Perfect for developers, administrators and anyone who needs a clear view of what
 ### Custom logs
 ```php
 Likoton_Debug_Logs_Logger::log( 'info', 'custom_source', 'Something happened', [ 'extra' => 'data' ] );
+```
+
+### Source badge colors (REST API)
+Namespace: `likoton-debug-logs/v1`
+
+- `GET /source-colors` - all source colors
+- `PUT /source-colors` - set colors, body: `{ "my_plugin": "#aabbcc" }`
+- `DELETE /source-colors/<source>` - reset a source to its default
+
+Requires the capability selected in Settings.
 
 ## Supported log levels (PSR-3 + extended PHP levels):
 
@@ -131,6 +160,14 @@ Yes, via the Export logs (CSV) button.
 
 Yes, choose the required capability in Settings.
 
+**What does the ignore list do?**
+
+Logs identical to an ignored record (same level, source and message) are not stored again; the plugin only counts how often they occurred. You can remove a record from the list at any time.
+
+**Can I change the plugin language?**
+
+Yes, choose a language in Settings. It affects only this plugin's texts.
+
 **Multisite support?**
 
 Yes, each site has its own logs table.
@@ -142,6 +179,12 @@ Yes, each site has its own logs table.
 3. Settings in dark mode
 
 ## Changelog ##
+
+2.1.0
+- Added an ignore list: selected recurring log entries are no longer saved to the database
+- Added a plugin interface language selector (8 languages)
+- Compatibility with PHP 8.4+ (no use of the deprecated E_STRICT constant) and WordPress 7.2
+- Hardened SQL escaping in the installer (Plugin Check warnings)
 
 2.0.1
 - Improved the appearance of the table on small screens

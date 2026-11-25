@@ -15,6 +15,8 @@ class Likoton_Debug_Logs_Admin {
         add_action( 'wp_ajax_likoton_debug_logs_save_settings', [ __CLASS__, 'ajax_save_settings' ] );
         add_action( 'wp_ajax_likoton_debug_logs_load_more_logs', [ __CLASS__, 'ajax_load_more_logs' ] );
         add_action( 'wp_ajax_likoton_debug_logs_delete_selected', [ __CLASS__, 'ajax_delete_selected' ] );
+        add_action( 'wp_ajax_likoton_debug_logs_ignore_selected', [ __CLASS__, 'ajax_ignore_selected' ] );
+        add_action( 'wp_ajax_likoton_debug_logs_unignore_selected', [ __CLASS__, 'ajax_unignore_selected' ] );
         add_filter( 'cron_schedules', [ __CLASS__, 'add_schedules' ] );
 
         if ( ! wp_next_scheduled( 'likoton_debug_logs_cleanup_logs' ) ) {
@@ -64,6 +66,8 @@ class Likoton_Debug_Logs_Admin {
         }
 
         $dark_mode  = isset( $_POST['likoton_debug_logs_dark_mode'] ) ? 1 : 0;
+        $ignore_enabled = isset( $_POST['likoton_debug_logs_ignore_enabled'] ) ? 1 : 0;
+        $language       = self::sanitize_language( isset( $_POST['likoton_debug_logs_language'] ) ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_language'] ) ) : '' );
         $capability = isset( $_POST['likoton_debug_logs_capability'] )
             ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_capability'] ) )
             : 'manage_options';
@@ -86,6 +90,8 @@ class Likoton_Debug_Logs_Admin {
 
         update_option( 'likoton_debug_logs_enabled_levels', $levels );
         update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
+        update_option( 'likoton_debug_logs_ignore_enabled', $ignore_enabled );
+        update_option( 'likoton_debug_logs_language', $language );
         update_option( 'likoton_debug_logs_capability', $capability );
         update_option( 'likoton_debug_logs_retention', $retention );
         update_option( 'likoton_debug_logs_dedup_interval', $dedup_interval );
@@ -196,6 +202,85 @@ class Likoton_Debug_Logs_Admin {
         wp_send_json_success( [ 'deleted' => $deleted ] );
     }
 
+    /* Only a shipped language (or '' for "System default") may be stored. */
+    private static function sanitize_language( $language ) {
+        return isset( Likoton_Debug_Logs_Installer::get_available_languages()[ $language ] ) ? $language : '';
+    }
+
+    /* Whether the "ignore selected records" feature is switched on in the settings. */
+    public static function is_ignore_enabled() {
+        return (bool) get_option( 'likoton_debug_logs_ignore_enabled', 0 );
+    }
+
+    /* Add the selected log rows to the ignore list (identity: level + source + message). */
+    public static function ajax_ignore_selected() {
+        check_ajax_referer( 'likoton_debug_logs_ignore_selected', 'likoton_debug_logs_nonce' );
+
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) || ! self::is_ignore_enabled() ) {
+            wp_send_json_error( null, 403 );
+        }
+
+        $raw_ids = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+        $ids     = self::parse_ids( $raw_ids );
+
+        if ( empty( $ids ) ) {
+            wp_send_json_error( null, 400 );
+        }
+
+        global $wpdb;
+        $logs_table    = $wpdb->prefix . Likoton_Debug_Logs_Installer::TABLE_NAME;
+        $ignored_table = $wpdb->prefix . Likoton_Debug_Logs_Installer::IGNORED_TABLE_NAME;
+        $now           = current_time( 'mysql', true );
+        $added         = 0;
+
+        foreach ( array_chunk( $ids, 500 ) as $chunk ) {
+            $placeholders = implode( ',', array_fill( 0, count( $chunk ), '%d' ) );
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+            $rows = $wpdb->get_results( $wpdb->prepare( "SELECT level, source, message FROM `{$logs_table}` WHERE id IN ( {$placeholders} )", $chunk ) );
+
+            foreach ( (array) $rows as $row ) {
+                // INSERT IGNORE + the unique signature key: ignoring the same log twice is a no-op.
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $added += (int) $wpdb->query( $wpdb->prepare(
+                    "INSERT IGNORE INTO `{$ignored_table}` (signature, level, source, message, occurrences, created_at) VALUES (%s, %s, %s, %s, 0, %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    Likoton_Debug_Logs_Installer::get_signature( $row->level, $row->source, $row->message ),
+                    $row->level,
+                    $row->source,
+                    $row->message,
+                    $now
+                ) );
+            }
+        }
+
+        wp_send_json_success( [ 'added' => $added ] );
+    }
+
+    /* Remove records from the ignore list so identical logs are stored again. */
+    public static function ajax_unignore_selected() {
+        check_ajax_referer( 'likoton_debug_logs_unignore_selected', 'likoton_debug_logs_nonce' );
+
+        if ( ! current_user_can( get_option( 'likoton_debug_logs_capability', 'manage_options' ) ) ) {
+            wp_send_json_error( null, 403 );
+        }
+
+        $raw_ids = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+        $ids     = self::parse_ids( $raw_ids );
+
+        if ( empty( $ids ) ) {
+            wp_send_json_error( null, 400 );
+        }
+
+        global $wpdb;
+        $table        = $wpdb->prefix . Likoton_Debug_Logs_Installer::IGNORED_TABLE_NAME;
+        $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        $deleted = (int) $wpdb->query( $wpdb->prepare( "DELETE FROM `{$table}` WHERE id IN ( {$placeholders} )", $ids ) );
+
+        wp_send_json_success( [ 'deleted' => $deleted ] );
+    }
+
     /* Parse a comma-separated list of ids into unique positive integers. */
     private static function parse_ids( $raw ) {
         $ids = array_map( 'absint', explode( ',', (string) $raw ) );
@@ -279,6 +364,18 @@ class Likoton_Debug_Logs_Admin {
             [ __CLASS__, 'render_logs_page' ]
         );
 
+        // Submenu: Ignored (only when the "ignore selected records" setting is on)
+        if ( self::is_ignore_enabled() ) {
+            add_submenu_page(
+                'likoton-debug-logs-logs',
+                __( 'Ignored', 'likoton-debug-logs' ),
+                __( 'Ignored', 'likoton-debug-logs' ),
+                $capability,
+                'likoton-debug-logs-ignored',
+                [ __CLASS__, 'render_ignored_page' ]
+            );
+        }
+
         // Submenu: Settings
         add_submenu_page(
             'likoton-debug-logs-logs',
@@ -312,21 +409,7 @@ class Likoton_Debug_Logs_Admin {
         ?>
         <div id="ldl-toast" class="ldl-toast" style="display:none;"></div>
 
-        <div class="ldl-modal" id="ldl-confirm-modal" hidden>
-            <div class="ldl-modal-backdrop" data-ldl-modal-close></div>
-            <div class="ldl-modal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ldl-modal-title" aria-describedby="ldl-modal-message">
-                <div class="ldl-modal-icon" aria-hidden="true"><span class="dashicons dashicons-trash"></span></div>
-                <h2 class="ldl-modal-title" id="ldl-modal-title"><?php esc_html_e( 'Delete selected logs', 'likoton-debug-logs' ); ?></h2>
-                <p class="ldl-modal-message" id="ldl-modal-message"><?php esc_html_e( 'Delete the selected logs? This cannot be undone.', 'likoton-debug-logs' ); ?></p>
-                <p class="ldl-modal-meta" id="ldl-modal-meta"></p>
-                <div class="ldl-modal-actions">
-                    <?php // phpcs:disable WordPress.WP.I18n.MissingArgDomain -- reuse WordPress core translations for the generic button labels. ?>
-                    <button type="button" class="button" id="ldl-modal-cancel" data-ldl-modal-close><?php esc_html_e( 'Cancel' ); ?></button>
-                    <button type="button" class="button button-primary ldl-modal-danger" id="ldl-modal-confirm"><?php esc_html_e( 'Delete' ); ?></button>
-                    <?php // phpcs:enable WordPress.WP.I18n.MissingArgDomain ?>
-                </div>
-            </div>
-        </div>
+        <?php self::render_confirm_modal(); ?>
 
         <div class="wrap">
             <?php
@@ -345,6 +428,162 @@ class Likoton_Debug_Logs_Admin {
         <?php
     }
 
+    /* Render Ignored page: the list of ignored records with their repeat counters. */
+    public static function render_ignored_page() {
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only filter/sort preferences, no state change
+        $search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+        $level  = isset( $_GET['level'] ) ? sanitize_text_field( wp_unslash( $_GET['level'] ) ) : '';
+        $source = isset( $_GET['source'] ) ? sanitize_text_field( wp_unslash( $_GET['source'] ) ) : '';
+        $orderby = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at';
+        $order   = isset( $_GET['order'] ) ? sanitize_key( wp_unslash( $_GET['order'] ) ) : 'desc';
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+        if ( ! in_array( $orderby, Likoton_Debug_Logs_Installer::get_ignored_sortable(), true ) ) {
+            $orderby = 'created_at';
+        }
+
+        $order = ( 'asc' === strtolower( $order ) ) ? 'asc' : 'desc';
+
+        $rows = Likoton_Debug_Logs_Installer::get_ignored( [
+            'search'  => $search,
+            'level'   => $level,
+            'source'  => $source,
+            'orderby' => $orderby,
+            'order'   => $order,
+        ] );
+
+        $sort_class = function ( $column ) use ( $orderby, $order ) {
+            if ( $column !== $orderby ) {
+                return '';
+            }
+            return ' sorted-column ' . ( 'asc' === $order ? 'sorted-asc' : 'sorted-desc' );
+        };
+
+        $total = count( $rows );
+        ?>
+        <div id="ldl-toast" class="ldl-toast" style="display:none;"></div>
+
+        <?php self::render_confirm_modal(); ?>
+
+        <div class="wrap">
+            <?php
+            self::render_header();
+            self::render_tabs( 'ignored' );
+            ?>
+
+            <p class="description ldl-ignored-intro">
+                <?php esc_html_e( 'Logs identical to the records below (same level, source and message) are not saved to the database. Their repeats are only counted here. Delete a record to start saving such logs again.', 'likoton-debug-logs' ); ?>
+            </p>
+
+            <form id="ldl-ignored-filters" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+                <input type="hidden" name="page" value="likoton-debug-logs-ignored" />
+                <input type="hidden" name="orderby" id="ldl-ignored-orderby" value="<?php echo esc_attr( $orderby ); ?>" />
+                <input type="hidden" name="order" id="ldl-ignored-order" value="<?php echo esc_attr( $order ); ?>" />
+
+                <div class="ldl-filters">
+                    <div class="ldl-search-wrapper">
+                        <input type="search" name="s" value="<?php echo esc_attr( $search ); ?>"
+                               placeholder="<?php esc_attr_e( 'Search ignored records…', 'likoton-debug-logs' ); ?>" />
+                        <span class="ldl-clear-search">×</span>
+                    </div>
+
+                    <select name="level">
+                        <option value=""><?php esc_html_e( 'All levels', 'likoton-debug-logs' ); ?></option>
+                        <?php foreach ( Likoton_Debug_Logs_Installer::get_ignored_filter_values( 'level' ) as $lvl ) : ?>
+                            <option value="<?php echo esc_attr( $lvl ); ?>" <?php selected( $level, $lvl ); ?>><?php echo esc_html( self::format_level( $lvl ) ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <select name="source">
+                        <option value=""><?php esc_html_e( 'All sources', 'likoton-debug-logs' ); ?></option>
+                        <?php foreach ( Likoton_Debug_Logs_Installer::get_ignored_filter_values( 'source' ) as $src ) : ?>
+                            <option value="<?php echo esc_attr( $src ); ?>" <?php selected( $source, $src ); ?>><?php echo esc_html( $src ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </form>
+
+            <div id="ldl-ignored-results">
+                <div class="ldl-toolbar" id="ldl-ignored-toolbar">
+                    <div class="ldl-toolbar-actions">
+                        <input type="checkbox" id="ldl-ignored-select-all" aria-label="<?php esc_attr_e( 'Select all', 'likoton-debug-logs' ); ?>" <?php disabled( 0 === $total ); ?> />
+
+                        <button type="button" class="ldl-bulk-action" id="ldl-ignored-delete" disabled
+                                title="<?php esc_attr_e( 'Stop ignoring', 'likoton-debug-logs' ); ?>"
+                                aria-label="<?php esc_attr_e( 'Stop ignoring', 'likoton-debug-logs' ); ?>">
+                            <span class="dashicons dashicons-trash"></span>
+                        </button>
+                    </div>
+
+                    <div class="ldl-toolbar-info" id="ldl-ignored-info" aria-live="polite">
+                        <?php
+                        /* translators: %d: number of ignored records shown in the table */
+                        echo esc_html( sprintf( __( 'Records: %d', 'likoton-debug-logs' ), $total ) );
+                        ?>
+                    </div>
+                </div>
+
+                <div class="ldl-ignored-wrapper">
+                    <table id="ldl-ignored-table" class="wp-list-table widefat fixed striped ldl-logs ldl-ignored">
+                        <thead>
+                        <tr>
+                            <th class="column-cb"></th>
+                            <th class="column-level<?php echo esc_attr( $sort_class( 'level' ) ); ?>" data-orderby="level"><?php esc_html_e( 'Level', 'likoton-debug-logs' ); ?></th>
+                            <th class="column-source<?php echo esc_attr( $sort_class( 'source' ) ); ?>" data-orderby="source"><?php esc_html_e( 'Source', 'likoton-debug-logs' ); ?></th>
+                            <th class="column-message<?php echo esc_attr( $sort_class( 'message' ) ); ?>" data-orderby="message"><?php esc_html_e( 'Message', 'likoton-debug-logs' ); ?></th>
+                            <th class="column-count<?php echo esc_attr( $sort_class( 'occurrences' ) ); ?>" data-orderby="occurrences"><?php esc_html_e( 'Occurrences', 'likoton-debug-logs' ); ?></th>
+                            <th class="column-date<?php echo esc_attr( $sort_class( 'last_seen_at' ) ); ?>" data-orderby="last_seen_at"><?php esc_html_e( 'Last seen', 'likoton-debug-logs' ); ?></th>
+                            <th class="column-date<?php echo esc_attr( $sort_class( 'created_at' ) ); ?>" data-orderby="created_at"><?php esc_html_e( 'Added', 'likoton-debug-logs' ); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php if ( $rows ) : ?>
+                            <?php foreach ( $rows as $row ) : ?>
+                                <tr>
+                                    <td class="column-cb"><input type="checkbox" class="ldl-ignored-cb" value="<?php echo (int) $row->id; ?>" aria-label="<?php
+                                        /* translators: %d: ignored record ID */
+                                        echo esc_attr( sprintf( __( 'Select record %d', 'likoton-debug-logs' ), (int) $row->id ) );
+                                    ?>" /></td>
+                                    <td><span class="ldl-badge ldl-level-<?php echo esc_attr( $row->level ); ?>"><?php echo esc_html( self::format_level( $row->level ) ); ?></span></td>
+                                    <td><span class="ldl-badge ldl-source-<?php echo esc_attr( $row->source ); ?>"><?php echo esc_html( $row->source ); ?></span></td>
+                                    <td><?php echo esc_html( $row->message ); ?></td>
+                                    <td class="column-count"><?php echo esc_html( number_format_i18n( (int) $row->occurrences ) ); ?></td>
+                                    <td><?php echo $row->last_seen_at ? wp_kses( self::format_local_date( $row->last_seen_at ), [ 'span' => [ 'title' => [] ] ] ) : '&mdash;'; ?></td>
+                                    <td><?php echo wp_kses( self::format_local_date( $row->created_at ), [ 'span' => [ 'title' => [] ] ] ); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr class="ldl-ignored-empty">
+                                <td colspan="7"><?php esc_html_e( 'No ignored records.', 'likoton-debug-logs' ); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /* Markup of the styled confirmation dialog (texts are overridden from JS per action). */
+    private static function render_confirm_modal() {
+        ?>
+        <div class="ldl-modal" id="ldl-confirm-modal" hidden>
+            <div class="ldl-modal-backdrop" data-ldl-modal-close></div>
+            <div class="ldl-modal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ldl-modal-title" aria-describedby="ldl-modal-message">
+                <div class="ldl-modal-icon" aria-hidden="true"><span class="dashicons dashicons-trash"></span></div>
+                <h2 class="ldl-modal-title" id="ldl-modal-title"><?php esc_html_e( 'Delete selected logs', 'likoton-debug-logs' ); ?></h2>
+                <p class="ldl-modal-message" id="ldl-modal-message"><?php esc_html_e( 'Delete the selected logs? This cannot be undone.', 'likoton-debug-logs' ); ?></p>
+                <p class="ldl-modal-meta" id="ldl-modal-meta"></p>
+                <div class="ldl-modal-actions">
+                    <button type="button" class="button" id="ldl-modal-cancel" data-ldl-modal-close><?php esc_html_e( 'Cancel', 'likoton-debug-logs' ); ?></button>
+                    <button type="button" class="button button-primary ldl-modal-danger" id="ldl-modal-confirm"><?php esc_html_e( 'Delete', 'likoton-debug-logs' ); ?></button>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
     /* Render Settings page */
     public static function render_settings_page() {
 
@@ -354,6 +593,8 @@ class Likoton_Debug_Logs_Admin {
         if ( isset( $_POST['likoton_debug_logs_settings_action'] ) && check_admin_referer( 'likoton_debug_logs_save_settings' ) ) {
 
             $dark_mode  = isset( $_POST['likoton_debug_logs_dark_mode'] ) ? 1 : 0;
+            $ignore_enabled = isset( $_POST['likoton_debug_logs_ignore_enabled'] ) ? 1 : 0;
+            $language       = self::sanitize_language( isset( $_POST['likoton_debug_logs_language'] ) ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_language'] ) ) : '' );
             $capability = isset( $_POST['likoton_debug_logs_capability'] )
                 ? sanitize_text_field( wp_unslash( $_POST['likoton_debug_logs_capability'] ) )
                 : 'manage_options';
@@ -377,6 +618,8 @@ class Likoton_Debug_Logs_Admin {
 
             update_option( 'likoton_debug_logs_enabled_levels', $levels );
             update_option( 'likoton_debug_logs_dark_mode', $dark_mode );
+            update_option( 'likoton_debug_logs_ignore_enabled', $ignore_enabled );
+            update_option( 'likoton_debug_logs_language', $language );
             update_option( 'likoton_debug_logs_capability', $capability );
             update_option( 'likoton_debug_logs_retention', $retention );
             update_option( 'likoton_debug_logs_dedup_interval', $dedup_interval );
@@ -385,6 +628,8 @@ class Likoton_Debug_Logs_Admin {
         }
 
         $dark_mode      = (bool) get_option( 'likoton_debug_logs_dark_mode', 0 );
+        $ignore_enabled = self::is_ignore_enabled();
+        $language       = Likoton_Debug_Logs_Installer::get_selected_language();
         $capability     = get_option( 'likoton_debug_logs_capability', 'manage_options' );
         $retention      = get_option( 'likoton_debug_logs_retention', '1m' );
         $dedup_interval = (int) get_option( 'likoton_debug_logs_dedup_interval', 0 );
@@ -423,6 +668,19 @@ class Likoton_Debug_Logs_Admin {
                         </td>
                     </tr>
 
+                    <!-- Interface language -->
+                    <tr>
+                        <th scope="row"><label for="likoton_debug_logs_language"><?php esc_html_e( 'Language', 'likoton-debug-logs' ); ?></label></th>
+                        <td>
+                            <select name="likoton_debug_logs_language" id="likoton_debug_logs_language">
+                                <option value="" <?php selected( $language, '' ); ?>><?php esc_html_e( 'System default', 'likoton-debug-logs' ); ?></option>
+                                <?php foreach ( Likoton_Debug_Logs_Installer::get_available_languages() as $code => $name ) : ?>
+                                    <option value="<?php echo esc_attr( $code ); ?>" <?php selected( $language, $code ); ?>><?php echo esc_html( $name ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                    </tr>
+
                     <!-- Log cleanup -->
                     <tr>
                         <th scope="row"><?php esc_html_e( 'Log retention', 'likoton-debug-logs' ); ?></th>
@@ -441,23 +699,6 @@ class Likoton_Debug_Logs_Admin {
                                     <?php esc_html_e( 'WP-Cron is disabled. Log cleanup will not run automatically.', 'likoton-debug-logs' ); ?>
                                 </p>
                             <?php endif; ?>
-                        </td>
-                    </tr>
-
-                    <!-- Duplicate log throttling -->
-                    <tr>
-                        <th scope="row"><?php esc_html_e( "Don't log identical errors more often than every:", 'likoton-debug-logs' ); ?></th>
-                        <td>
-                            <select name="likoton_debug_logs_dedup_interval">
-                                <option value="0" <?php selected( $dedup_interval, 0 ); ?>><?php esc_html_e( 'No limit', 'likoton-debug-logs' ); ?></option>
-                                <option value="10" <?php selected( $dedup_interval, 10 ); ?>><?php esc_html_e( '10 seconds', 'likoton-debug-logs' ); ?></option>
-                                <option value="30" <?php selected( $dedup_interval, 30 ); ?>><?php esc_html_e( '30 seconds', 'likoton-debug-logs' ); ?></option>
-                                <option value="60" <?php selected( $dedup_interval, 60 ); ?>><?php esc_html_e( '1 minute', 'likoton-debug-logs' ); ?></option>
-                                <option value="900" <?php selected( $dedup_interval, 900 ); ?>><?php esc_html_e( '15 minutes', 'likoton-debug-logs' ); ?></option>
-                                <option value="1800" <?php selected( $dedup_interval, 1800 ); ?>><?php echo esc_html( _x( '30 minutes', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
-                                <option value="3600" <?php selected( $dedup_interval, 3600 ); ?>><?php echo esc_html( _x( '1 hour', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
-                            </select>
-                            <p class="description"><?php esc_html_e( 'Skips writing a new log row when the same level, source and message was already logged within this time window.', 'likoton-debug-logs' ); ?></p>
                         </td>
                     </tr>
 
@@ -490,6 +731,41 @@ class Likoton_Debug_Logs_Admin {
                                     <?php endforeach; ?>
                                 </div>
                             </div>
+                        </td>
+                    </tr>
+
+                    <!-- Ignore selected records -->
+                    <tr>
+                        <th scope="row"><?php esc_html_e( 'Ignore selected records', 'likoton-debug-logs' ); ?></th>
+                        <td>
+                            <label class="components-form-toggle">
+                                <input type="checkbox"
+                                       class="components-form-toggle__input"
+                                       name="likoton_debug_logs_ignore_enabled"
+                                       id="likoton_debug_logs_ignore_enabled"
+                                       value="1"
+                                       <?php checked( $ignore_enabled ); ?> />
+                                <span class="components-form-toggle__track"></span>
+                                <span class="components-form-toggle__thumb"></span>
+                            </label>
+                            <p class="description"><?php esc_html_e( 'Adds an Ignore button to the logs and an Ignored tab. Logs identical to an ignored record (same level, source and message) are not saved to the database; only their occurrences are counted on the Ignored tab.', 'likoton-debug-logs' ); ?></p>
+                        </td>
+                    </tr>
+
+                    <!-- Duplicate log throttling -->
+                    <tr>
+                        <th scope="row"><?php esc_html_e( "Don't log identical errors more often than every:", 'likoton-debug-logs' ); ?></th>
+                        <td>
+                            <select name="likoton_debug_logs_dedup_interval">
+                                <option value="0" <?php selected( $dedup_interval, 0 ); ?>><?php esc_html_e( 'No limit', 'likoton-debug-logs' ); ?></option>
+                                <option value="10" <?php selected( $dedup_interval, 10 ); ?>><?php esc_html_e( '10 seconds', 'likoton-debug-logs' ); ?></option>
+                                <option value="30" <?php selected( $dedup_interval, 30 ); ?>><?php esc_html_e( '30 seconds', 'likoton-debug-logs' ); ?></option>
+                                <option value="60" <?php selected( $dedup_interval, 60 ); ?>><?php esc_html_e( '1 minute', 'likoton-debug-logs' ); ?></option>
+                                <option value="900" <?php selected( $dedup_interval, 900 ); ?>><?php esc_html_e( '15 minutes', 'likoton-debug-logs' ); ?></option>
+                                <option value="1800" <?php selected( $dedup_interval, 1800 ); ?>><?php echo esc_html( _x( '30 minutes', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
+                                <option value="3600" <?php selected( $dedup_interval, 3600 ); ?>><?php echo esc_html( _x( '1 hour', 'dedup interval', 'likoton-debug-logs' ) ); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e( 'Skips writing a new log row when the same level, source and message was already logged within this time window.', 'likoton-debug-logs' ); ?></p>
                         </td>
                     </tr>
 
@@ -543,8 +819,9 @@ class Likoton_Debug_Logs_Admin {
 
     /* Render tabs navigation */
     private static function render_tabs( $active = 'logs' ) {
+        $show_ignored = self::is_ignore_enabled();
         ?>
-        <nav class="health-check-tabs-wrapper hide-if-no-js tab-count-3"
+        <nav class="health-check-tabs-wrapper hide-if-no-js tab-count-<?php echo $show_ignored ? 4 : 3; ?>"
              aria-label="<?php esc_attr_e( 'Bookmark menu', 'likoton-debug-logs' ); ?>">
 
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-logs' ) ); ?>"
@@ -552,6 +829,14 @@ class Likoton_Debug_Logs_Admin {
                <?php echo $active === 'logs' ? 'aria-current="page"' : ''; ?>>
                 <?php esc_html_e( 'Logs', 'likoton-debug-logs' ); ?>
             </a>
+
+            <?php if ( $show_ignored ) : ?>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-ignored' ) ); ?>"
+               class="health-check-tab <?php echo $active === 'ignored' ? 'active' : ''; ?>"
+               <?php echo $active === 'ignored' ? 'aria-current="page"' : ''; ?>>
+                <?php esc_html_e( 'Ignored', 'likoton-debug-logs' ); ?>
+            </a>
+            <?php endif; ?>
 
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=likoton-debug-logs-settings' ) ); ?>"
                class="health-check-tab <?php echo $active === 'settings' ? 'active' : ''; ?>"
@@ -927,6 +1212,17 @@ class Likoton_Debug_Logs_Admin {
                             aria-label="<?php esc_attr_e( 'Copy', 'likoton-debug-logs' ); ?>">
                         <span class="dashicons dashicons-admin-page"></span>
                     </button>
+
+                    <?php if ( self::is_ignore_enabled() ) : ?>
+                        <button type="button" class="ldl-bulk-action" id="ldl-bulk-ignore" disabled
+                                title="<?php esc_attr_e( 'Ignore selected logs', 'likoton-debug-logs' ); ?>"
+                                aria-label="<?php esc_attr_e( 'Ignore selected logs', 'likoton-debug-logs' ); ?>">
+                            <svg class="ldl-icon-ignore" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <line x1="5.64" y1="5.64" x2="18.36" y2="18.36"></line>
+                            </svg>
+                        </button>
+                    <?php endif; ?>
                 </div>
 
                 <div class="ldl-toolbar-info" id="ldl-toolbar-info" aria-live="polite">

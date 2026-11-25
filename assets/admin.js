@@ -363,7 +363,9 @@
                 saveSettings(showToast);
             });
 
-            $settingsForm.on('change', '#likoton_debug_logs_dark_mode', function () {
+            // Dark mode swaps the stylesheet and "Ignore selected records" adds/removes a menu tab, so reload.
+            // Language changes every text on the page, so it needs a reload as well.
+            $settingsForm.on('change', '#likoton_debug_logs_dark_mode, #likoton_debug_logs_ignore_enabled, #likoton_debug_logs_language', function () {
                 saveSettings(function () {
                     location.reload();
                 });
@@ -459,7 +461,7 @@
         }
 
         // After a mouse "deselect" (all rows or a single row) drop the focus ring; keyboard users (detail === 0) keep their focus.
-        $(document).on('click', '#ldl-select-all, .ldl-row-cb', function (e) {
+        $(document).on('click', '#ldl-select-all, .ldl-row-cb, #ldl-ignored-select-all, .ldl-ignored-cb', function (e) {
             if (!this.checked && e.detail > 0) {
                 this.blur();
             }
@@ -620,6 +622,169 @@
                 window.alert(bulkStrings.copyFailed || 'Could not copy to clipboard.');
             });
         });
+
+        // Ignore: add the selected logs to the ignore list (the rows themselves stay in the logs table).
+        $(document).on('click', '#ldl-bulk-ignore', function () {
+            const ids = selectedIds();
+            if (!ids.length) {
+                return;
+            }
+
+            const $buttons = $('.ldl-bulk-action').prop('disabled', true);
+
+            $.post(ajaxUrl, {
+                action: 'likoton_debug_logs_ignore_selected',
+                likoton_debug_logs_nonce: likotonDebugLogsData.ignoreNonce,
+                ids: ids.join(',')
+            }).done(function (response) {
+                if (!response || !response.success) {
+                    window.alert(bulkStrings.ignoreFailed || 'Could not ignore the selected logs.');
+                    return;
+                }
+                selectedBoxes().prop('checked', false);
+                showToast(formatString(bulkStrings.ignoreAdded || 'Added to ignored: %d', response.data.added));
+            }).fail(function () {
+                window.alert(bulkStrings.ignoreFailed || 'Could not ignore the selected logs.');
+            }).always(function () {
+                $buttons.prop('disabled', false);
+                updateSelectionUI();
+            });
+        });
+
+        // ---- Ignored tab: search, level/source filters, sorting and bulk removal from the ignore list ----
+
+        const $ignFilters = $('#ldl-ignored-filters');
+
+        if ($ignFilters.length) {
+            let ignGeneration = 0;
+            let ignTimer = null;
+
+            const ignBoxes = function () {
+                return $('#ldl-ignored-table tbody .ldl-ignored-cb');
+            };
+
+            const ignSelectedIds = function () {
+                return ignBoxes().filter(':checked').map(function () { return this.value; }).get();
+            };
+
+            const updateIgnoredSelection = function () {
+                const $boxes = ignBoxes();
+                const total = $boxes.length;
+                const selected = $boxes.filter(':checked').length;
+
+                $('#ldl-ignored-select-all').prop({
+                    checked: total > 0 && selected === total,
+                    indeterminate: selected > 0 && selected < total,
+                    disabled: total === 0
+                });
+                $('#ldl-ignored-delete').prop('disabled', selected === 0);
+                $('#ldl-ignored-info').text(selected > 0
+                    ? formatString(bulkStrings.selectedCount || '%1$d of %2$d selected', selected, total)
+                    : formatString(bulkStrings.recordsCount || 'Records: %d', total));
+            };
+
+            // Reloads the list (toolbar + table) from the server with the current filters and sort.
+            // With refreshFilters the level/source dropdowns are rebuilt too (records may have disappeared).
+            const reloadIgnored = function (refreshFilters) {
+                const generation = ++ignGeneration;
+                const $results = $('#ldl-ignored-results').addClass('is-loading');
+
+                $.get($ignFilters.attr('action'), $ignFilters.serialize(), function (html) {
+                    if (!pageIsAlive || generation !== ignGeneration) return;
+
+                    const $page = $('<div>').append($.parseHTML(html));
+                    const $newResults = $page.find('#ldl-ignored-results');
+                    if (!$newResults.length) return;
+
+                    $results.replaceWith($newResults);
+
+                    if (refreshFilters) {
+                        let lostSelection = false;
+                        $ignFilters.find('select').each(function () {
+                            const $select = $(this);
+                            const $fresh = $page.find('#ldl-ignored-filters select[name="' + this.name + '"]');
+                            const previous = $select.val();
+                            if (!$fresh.length) return;
+                            $select.html($fresh.html());
+                            $select.val(previous);
+                            if ($select.val() !== previous) {
+                                $select.val('');
+                                lostSelection = true;
+                            }
+                        });
+                        if (lostSelection) {
+                            reloadIgnored(false);
+                        }
+                    }
+
+                    updateIgnoredSelection();
+                }).always(function () {
+                    if (generation === ignGeneration) {
+                        $('#ldl-ignored-results').removeClass('is-loading');
+                    }
+                });
+            };
+
+            // Delegated: initClearSearch() rebinds the search input's own handlers after every AJAX call.
+            $(document).on('input', '#ldl-ignored-filters input[type="search"]', function () {
+                clearTimeout(ignTimer);
+                ignTimer = setTimeout(reloadIgnored, 250);
+            });
+
+            $(document).on('change', '#ldl-ignored-filters select', function () {
+                reloadIgnored();
+            });
+
+            $(document).on('click', '#ldl-ignored-table th[data-orderby]', function () {
+                const asc = !$(this).hasClass('sorted-asc');
+                $('#ldl-ignored-orderby').val($(this).data('orderby'));
+                $('#ldl-ignored-order').val(asc ? 'asc' : 'desc');
+                reloadIgnored();
+            });
+
+            $(document).on('change', '#ldl-ignored-select-all', function () {
+                ignBoxes().prop('checked', this.checked);
+                updateIgnoredSelection();
+            });
+
+            $(document).on('change', '.ldl-ignored-cb', updateIgnoredSelection);
+
+            $(document).on('click', '#ldl-ignored-delete', function () {
+                const ids = ignSelectedIds();
+                if (!ids.length) {
+                    return;
+                }
+
+                confirmDelete({
+                    title: bulkStrings.unignoreTitle,
+                    message: bulkStrings.unignoreConfirm,
+                    meta: formatString(bulkStrings.selectedCount || '%1$d of %2$d selected', ids.length, ignBoxes().length)
+                }).then(function (confirmed) {
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    $('#ldl-ignored-delete').prop('disabled', true);
+
+                    $.post(ajaxUrl, {
+                        action: 'likoton_debug_logs_unignore_selected',
+                        likoton_debug_logs_nonce: likotonDebugLogsData.unignoreNonce,
+                        ids: ids.join(',')
+                    }).done(function (response) {
+                        if (!response || !response.success) {
+                            window.alert(bulkStrings.unignoreFailed || 'Could not remove the record from the ignored list.');
+                            updateIgnoredSelection();
+                            return;
+                        }
+                        showToast(bulkStrings.unignoreDone || 'Removed from ignored');
+                        reloadIgnored(true);
+                    }).fail(function () {
+                        window.alert(bulkStrings.unignoreFailed || 'Could not remove the record from the ignored list.');
+                        updateIgnoredSelection();
+                    });
+                });
+            });
+        }
 
         function showToast(message) {
             const $toast = $('#ldl-toast');

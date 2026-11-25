@@ -472,7 +472,8 @@ input.ldl-date-input.is-active {
 
 /* Table and toolbar while a reload is in flight. */
 .ldl-toolbar.is-loading,
-#ldl-logs-table.is-loading {
+#ldl-logs-table.is-loading,
+#ldl-ignored-results.is-loading {
     opacity: 0.55;
     pointer-events: none;
 }
@@ -513,6 +514,64 @@ input.ldl-date-input.is-active {
     width: 20px;
     height: 20px;
     font-size: 20px;
+}
+
+.ldl-bulk-action .ldl-icon-ignore {
+    width: 20px;
+    height: 20px;
+}
+
+/* Ignored tab */
+.ldl-ignored-intro {
+    margin: 12px 0;
+    max-width: 900px;
+}
+
+.ldl-ignored-wrapper {
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Seven columns with fixed widths: keep the table wide enough that Message always gets room,
+   and let the wrapper scroll horizontally instead of squeezing the text. */
+#ldl-ignored-table {
+    border: none;
+    min-width: 1000px;
+    border-collapse: collapse;
+}
+
+#ldl-ignored-table .column-message {
+    min-width: 280px;
+}
+
+#ldl-ignored-table .column-count {
+    width: 100px;
+    text-align: center;
+}
+
+#ldl-ignored-table .column-actions {
+    width: 50px;
+    text-align: center;
+}
+
+#ldl-ignored-table .column-date {
+    width: 160px;
+}
+
+#ldl-ignored-table td {
+    vertical-align: middle;
+}
+
+@media (max-width: 782px) {
+    #ldl-ignored-table tr {
+        display: table-row;
+    }
+
+    #ldl-ignored-table th,
+    #ldl-ignored-table td {
+        display: table-cell;
+    }
 }
 
 .ldl-toolbar-info {
@@ -578,18 +637,21 @@ input.ldl-date-input.is-active {
 /* Table header sorting indicators */
 
 /* Cursor pointer on hover */
-#ldl-logs-table th {
+#ldl-logs-table th,
+#ldl-ignored-table th[data-orderby] {
     cursor: pointer;
     position: relative;
 }
 
 /* Highlight sorted column */
-#ldl-logs-table th.sorted-column {
+#ldl-logs-table th.sorted-column,
+#ldl-ignored-table th.sorted-column {
     background-color: #eaf3ff;
 }
 
 /* Ascending arrow */
-#ldl-logs-table th.sorted-asc::after {
+#ldl-logs-table th.sorted-asc::after,
+#ldl-ignored-table th.sorted-asc::after {
     content: "▲";
     position: absolute;
     right: 8px;
@@ -598,7 +660,8 @@ input.ldl-date-input.is-active {
 }
 
 /* Descending arrow */
-#ldl-logs-table th.sorted-desc::after {
+#ldl-logs-table th.sorted-desc::after,
+#ldl-ignored-table th.sorted-desc::after {
     content: "▼";
     position: absolute;
     right: 8px;

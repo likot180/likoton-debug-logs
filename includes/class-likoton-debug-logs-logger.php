@@ -61,6 +61,31 @@ class Likoton_Debug_Logs_Logger {
             }
         }
 
+        // Ignored records: matching logs are not stored, only counted on the ignore list.
+        // Compared in the stored (sanitized) form so the signature matches what Ignore saved.
+        if ( get_option( 'likoton_debug_logs_ignore_enabled', 0 ) ) {
+            $ignored_table = $wpdb->prefix . Likoton_Debug_Logs_Installer::IGNORED_TABLE_NAME;
+            $signature     = Likoton_Debug_Logs_Installer::get_signature(
+                sanitize_text_field( $level ),
+                sanitize_text_field( $source ),
+                wp_kses_post( $message )
+            );
+
+            // One indexed UPDATE: it both detects a match and records the occurrence.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $matched = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE `{$ignored_table}` SET occurrences = occurrences + 1, last_seen_at = %s WHERE signature = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    current_time( 'mysql', true ),
+                    $signature
+                )
+            );
+
+            if ( $matched ) {
+                return;
+            }
+        }
+
         $dedup_interval = (int) get_option( 'likoton_debug_logs_dedup_interval', 0 );
 
         if ( $dedup_interval > 0 ) {
@@ -119,7 +144,8 @@ class Likoton_Debug_Logs_Logger {
             E_USER_ERROR        => 'user_error',
             E_USER_WARNING      => 'user_warning',
             E_USER_NOTICE       => 'user_notice',
-            E_STRICT            => 'strict',
+            // E_STRICT (2048) is deprecated as a constant since PHP 8.4; use the literal value.
+            2048                => 'strict',
             E_RECOVERABLE_ERROR => 'recoverable_error',
             E_DEPRECATED        => 'deprecated',
             E_USER_DEPRECATED   => 'user_deprecated',

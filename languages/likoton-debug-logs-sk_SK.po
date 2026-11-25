@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: LiKoToN Debug Logs 1.3.0\n"
+"Project-Id-Version: LiKoToN Debug Logs 2.1.0\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
@@ -246,3 +246,70 @@ msgstr "Kopírovanie do schránky zlyhalo."
 
 msgid "Delete all logs? This cannot be undone."
 msgstr "Odstrániť všetky záznamy? Túto akciu nie je možné vrátiť späť."
+
+msgid "Ignored"
+msgstr "Ignorované"
+
+msgid "Ignore selected records"
+msgstr "Ignorovať vybrané záznamy"
+
+msgid "Adds an Ignore button to the logs and an Ignored tab. Logs identical to an ignored record (same level, source and message) are not saved to the database; only their occurrences are counted on the Ignored tab."
+msgstr "Pridá k logom tlačidlo Ignorovať a záložku Ignorované. Logy zhodné s ignorovaným záznamom (rovnaká úroveň, zdroj a správa) sa neukladajú do databázy; na záložke Ignorované sa počítajú iba ich výskyty."
+
+msgid "Ignore selected logs"
+msgstr "Ignorovať vybrané logy"
+
+msgid "Logs identical to the records below (same level, source and message) are not saved to the database. Their repeats are only counted here. Delete a record to start saving such logs again."
+msgstr "Logy zhodné s nižšie uvedenými záznamami (rovnaká úroveň, zdroj a správa) sa neukladajú do databázy. Ich opakovania sa tu iba počítajú. Odstráňte záznam, aby sa takéto logy opäť ukladali."
+
+msgid "Occurrences"
+msgstr "Výskyty"
+
+msgid "Last seen"
+msgstr "Naposledy zaznamenané"
+
+msgid "Added"
+msgstr "Pridané"
+
+msgid "Stop ignoring"
+msgstr "Prestať ignorovať"
+
+msgid "No ignored records."
+msgstr "Žiadne ignorované záznamy."
+
+msgid "Added to ignored: %d"
+msgstr "Pridané do ignorovaných: %d"
+
+msgid "Could not ignore the selected logs."
+msgstr "Vybrané logy sa nepodarilo ignorovať."
+
+
+msgid "Removed from ignored"
+msgstr "Odstránené z ignorovaných"
+
+msgid "Could not remove the record from the ignored list."
+msgstr "Záznam sa nepodarilo odstrániť zo zoznamu ignorovaných."
+
+msgid "Remove the selected records from the ignored list? Identical logs will be saved to the database again."
+msgstr "Odstrániť vybrané záznamy zo zoznamu ignorovaných? Zhodné logy sa budú opäť ukladať do databázy."
+
+msgid "Search ignored records…"
+msgstr "Hľadať v ignorovaných…"
+
+msgid "Select record %d"
+msgstr "Vybrať záznam %d"
+
+msgid "Records: %d"
+msgstr "Záznamy: %d"
+
+msgid "Language"
+msgstr "Jazyk"
+
+msgid "System default"
+msgstr "Predvolený systémový"
+
+msgid "Cancel"
+msgstr "Zrušiť"
+
+msgid "Delete"
+msgstr "Odstrániť"

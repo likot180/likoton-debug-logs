@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: LiKoToN Debug Logs 1.3.0\n"
+"Project-Id-Version: LiKoToN Debug Logs 2.1.0\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
@@ -246,3 +246,70 @@ msgstr "No se pudo copiar al portapapeles."
 
 msgid "Delete all logs? This cannot be undone."
 msgstr "¿Eliminar todos los registros? Esta acción no se puede deshacer."
+
+msgid "Ignored"
+msgstr "Ignorados"
+
+msgid "Ignore selected records"
+msgstr "Ignorar registros seleccionados"
+
+msgid "Adds an Ignore button to the logs and an Ignored tab. Logs identical to an ignored record (same level, source and message) are not saved to the database; only their occurrences are counted on the Ignored tab."
+msgstr "Añade un botón Ignorar a los registros y una pestaña Ignorados. Los registros idénticos a uno ignorado (mismo nivel, origen y mensaje) no se guardan en la base de datos; en la pestaña Ignorados solo se cuentan sus apariciones."
+
+msgid "Ignore selected logs"
+msgstr "Ignorar los registros seleccionados"
+
+msgid "Logs identical to the records below (same level, source and message) are not saved to the database. Their repeats are only counted here. Delete a record to start saving such logs again."
+msgstr "Los registros idénticos a los siguientes (mismo nivel, origen y mensaje) no se guardan en la base de datos. Sus repeticiones solo se cuentan aquí. Elimina un registro para que vuelvan a guardarse."
+
+msgid "Occurrences"
+msgstr "Apariciones"
+
+msgid "Last seen"
+msgstr "Visto por última vez"
+
+msgid "Added"
+msgstr "Añadido"
+
+msgid "Stop ignoring"
+msgstr "Dejar de ignorar"
+
+msgid "No ignored records."
+msgstr "No hay registros ignorados."
+
+msgid "Added to ignored: %d"
+msgstr "Añadidos a ignorados: %d"
+
+msgid "Could not ignore the selected logs."
+msgstr "No se pudieron ignorar los registros seleccionados."
+
+
+msgid "Removed from ignored"
+msgstr "Quitado de ignorados"
+
+msgid "Could not remove the record from the ignored list."
+msgstr "No se pudo quitar el registro de la lista de ignorados."
+
+msgid "Remove the selected records from the ignored list? Identical logs will be saved to the database again."
+msgstr "¿Quitar los registros seleccionados de la lista de ignorados? Los registros idénticos volverán a guardarse en la base de datos."
+
+msgid "Search ignored records…"
+msgstr "Buscar en ignorados…"
+
+msgid "Select record %d"
+msgstr "Seleccionar registro %d"
+
+msgid "Records: %d"
+msgstr "Registros: %d"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "System default"
+msgstr "Predeterminado del sistema"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Delete"
+msgstr "Eliminar"

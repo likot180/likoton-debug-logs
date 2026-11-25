@@ -8,7 +8,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Likoton_Debug_Logs_Installer {
 
-    const TABLE_NAME = 'likoton_debug_logs';
+    const TABLE_NAME         = 'likoton_debug_logs';
+    const IGNORED_TABLE_NAME = 'likoton_debug_logs_ignored';
+
+    /** Bump when the schema changes; maybe_upgrade() then re-runs dbDelta once. */
+    const DB_VERSION = '2';
 
     /* Default colors for known sources */
     public static function get_default_source_colors() {
@@ -55,6 +59,8 @@ class Likoton_Debug_Logs_Installer {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
 
+        self::create_ignored_table();
+
         if ( get_option( 'likoton_debug_logs_enabled_levels', null ) === null ) {
            update_option( 'likoton_debug_logs_enabled_levels', [
                 'debug', 'info', 'notice', 'warning', 'error',
@@ -68,6 +74,50 @@ class Likoton_Debug_Logs_Installer {
         if ( get_option( 'likoton_debug_logs_dedup_interval', null ) === null ) {
             update_option( 'likoton_debug_logs_dedup_interval', 0 );
         }
+
+        update_option( 'likoton_debug_logs_db_version', self::DB_VERSION );
+    }
+
+    /**
+     * Records the user chose to ignore. A repeat of a matching log (same level, source and
+     * message) is not stored in the logs table; its occurrence is counted here instead.
+     */
+    public static function create_ignored_table() {
+        global $wpdb;
+
+        $table   = $wpdb->prefix . self::IGNORED_TABLE_NAME;
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            signature CHAR(32) NOT NULL,
+            level VARCHAR(50) NOT NULL,
+            source VARCHAR(100) NOT NULL,
+            message TEXT NOT NULL,
+            occurrences BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            last_seen_at DATETIME NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY signature (signature)
+        ) {$charset};";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( $sql );
+    }
+
+    /** The plugin is updated in place (no activation), so new tables are created here. */
+    public static function maybe_upgrade() {
+        if ( get_option( 'likoton_debug_logs_db_version' ) === self::DB_VERSION ) {
+            return;
+        }
+
+        self::create_ignored_table();
+        update_option( 'likoton_debug_logs_db_version', self::DB_VERSION );
+    }
+
+    /** Identity of a log for the ignore list: level + source + message, as stored. */
+    public static function get_signature( $level, $source, $message ) {
+        return md5( $level . "\0" . $source . "\0" . $message );
     }
 
     public static function deactivate() {
@@ -76,9 +126,118 @@ class Likoton_Debug_Logs_Installer {
 
     public static function uninstall() {
         global $wpdb;
-        $table = $wpdb->prefix . self::TABLE_NAME;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+
+        foreach ( [ self::TABLE_NAME, self::IGNORED_TABLE_NAME ] as $name ) {
+            $table = esc_sql( $wpdb->prefix . $name );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+            $wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+        }
+    }
+
+    /** Columns the ignored list can be sorted by. */
+    public static function get_ignored_sortable() {
+        return [ 'level', 'source', 'message', 'occurrences', 'last_seen_at', 'created_at' ];
+    }
+
+    /**
+     * Ignored records, optionally filtered (search in message/source, exact level, exact source)
+     * and sorted by a whitelisted column. Defaults to newest added first.
+     */
+    public static function get_ignored( $args = [] ) {
+        global $wpdb;
+
+        $args  = wp_parse_args( $args, [
+            'search'  => '',
+            'level'   => '',
+            'source'  => '',
+            'orderby' => 'created_at',
+            'order'   => 'DESC',
+        ] );
+        $table = esc_sql( $wpdb->prefix . self::IGNORED_TABLE_NAME );
+
+        $where  = [];
+        $params = [];
+
+        if ( '' !== $args['search'] ) {
+            $like     = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+            $where[]  = '( message LIKE %s OR source LIKE %s OR level LIKE %s )';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        if ( '' !== $args['level'] ) {
+            $where[]  = 'level = %s';
+            $params[] = $args['level'];
+        }
+
+        if ( '' !== $args['source'] ) {
+            $where[]  = 'source = %s';
+            $params[] = $args['source'];
+        }
+
+        $orderby = in_array( $args['orderby'], self::get_ignored_sortable(), true ) ? esc_sql( $args['orderby'] ) : 'created_at';
+        $order   = 'ASC' === strtoupper( $args['order'] ) ? 'ASC' : 'DESC';
+
+        $sql = "SELECT * FROM `{$table}`";
+
+        if ( $where ) {
+            $sql .= ' WHERE ' . implode( ' AND ', $where );
+        }
+
+        // $orderby/$order come from whitelists above; id keeps the order stable between equal values.
+        $sql .= " ORDER BY {$orderby} {$order}, id {$order}";
+
+        if ( $params ) {
+            $sql = $wpdb->prepare( $sql, $params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        return $wpdb->get_results( $sql );
+    }
+
+    /** Distinct levels and sources present on the ignore list (for the filter dropdowns). */
+    public static function get_ignored_filter_values( $column ) {
+        global $wpdb;
+
+        if ( ! in_array( $column, [ 'level', 'source' ], true ) ) {
+            return [];
+        }
+
+        $table  = esc_sql( $wpdb->prefix . self::IGNORED_TABLE_NAME );
+        $column = esc_sql( $column );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        return $wpdb->get_col( "SELECT DISTINCT {$column} FROM `{$table}` ORDER BY {$column} ASC" );
+    }
+
+    /** Interface languages shipped with the plugin (locale => native name); only those with a compiled .mo. */
+    public static function get_available_languages() {
+        $names = [
+            'en_US' => 'English (US)',
+            'pl_PL' => 'Polski',
+            'de_DE' => 'Deutsch',
+            'fr_FR' => 'Français',
+            'es_ES' => 'Español',
+            'cs_CZ' => 'Čeština',
+            'sk_SK' => 'Slovenčina',
+            'pt_PT' => 'Português',
+        ];
+
+        foreach ( array_keys( $names ) as $locale ) {
+            if ( ! file_exists( LIKOTON_DEBUG_LOGS_PLUGIN_DIR . 'languages/likoton-debug-logs-' . $locale . '.mo' ) ) {
+                unset( $names[ $locale ] );
+            }
+        }
+
+        return $names;
+    }
+
+    /** The language chosen in the settings, or '' for "System default" (follow the WordPress locale). */
+    public static function get_selected_language() {
+        $language = (string) get_option( 'likoton_debug_logs_language', '' );
+
+        return isset( self::get_available_languages()[ $language ] ) ? $language : '';
     }
 
     public static function get_unique_sources() {

@@ -48,8 +48,10 @@ class Likoton_Debug_Logs_Assets {
 			'nonce'       => wp_create_nonce( 'likoton_debug_logs_load_more_logs' ),
 			'deleteNonce' => wp_create_nonce( 'likoton_debug_logs_delete_selected' ),
 			'exportNonce' => wp_create_nonce( 'likoton_debug_logs_export_logs' ),
+			'ignoreNonce'   => wp_create_nonce( 'likoton_debug_logs_ignore_selected' ),
+			'unignoreNonce' => wp_create_nonce( 'likoton_debug_logs_unignore_selected' ),
 			'exportUrl'   => admin_url( 'admin-post.php' ),
-			'locale'      => str_replace( '_', '-', get_user_locale() ),
+			'locale'      => str_replace( '_', '-', Likoton_Debug_Logs_Installer::get_selected_language() ?: get_user_locale() ),
 			'i18n'        => [
 				'today'         => __( 'Today', 'likoton-debug-logs' ),
 				'clear'         => __( 'Clear', 'likoton-debug-logs' ),
@@ -62,6 +64,16 @@ class Likoton_Debug_Logs_Assets {
 				'deleteFailed'  => __( 'Could not delete the selected logs.', 'likoton-debug-logs' ),
 				'deleteAllTitle'   => __( 'Delete all logs', 'likoton-debug-logs' ),
 				'deleteAllConfirm' => __( 'Delete all logs? This cannot be undone.', 'likoton-debug-logs' ),
+				/* translators: %d: number of records added to the ignore list */
+				'ignoreAdded'      => __( 'Added to ignored: %d', 'likoton-debug-logs' ),
+				'ignoreFailed'     => __( 'Could not ignore the selected logs.', 'likoton-debug-logs' ),
+				'unignoreTitle'    => __( 'Stop ignoring', 'likoton-debug-logs' ),
+				'unignoreConfirm'  => __( 'Remove the selected records from the ignored list? Identical logs will be saved to the database again.', 'likoton-debug-logs' ),
+				/* translators: %d: number of ignored records shown in the table */
+				'recordsCount'     => __( 'Records: %d', 'likoton-debug-logs' ),
+				'unignoreDone'     => __( 'Removed from ignored', 'likoton-debug-logs' ),
+				'unignoreFailed'   => __( 'Could not remove the record from the ignored list.', 'likoton-debug-logs' ),
+				'noIgnored'        => __( 'No ignored records.', 'likoton-debug-logs' ),
 			],
 		] );
     }

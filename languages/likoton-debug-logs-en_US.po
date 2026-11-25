@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: LiKoToN Debug Logs 1.3.0\n"
+"Project-Id-Version: LiKoToN Debug Logs 2.1.0\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
@@ -246,3 +246,70 @@ msgstr "Could not copy to clipboard."
 
 msgid "Delete all logs? This cannot be undone."
 msgstr "Delete all logs? This cannot be undone."
+
+msgid "Ignored"
+msgstr "Ignored"
+
+msgid "Ignore selected records"
+msgstr "Ignore selected records"
+
+msgid "Adds an Ignore button to the logs and an Ignored tab. Logs identical to an ignored record (same level, source and message) are not saved to the database; only their occurrences are counted on the Ignored tab."
+msgstr "Adds an Ignore button to the logs and an Ignored tab. Logs identical to an ignored record (same level, source and message) are not saved to the database; only their occurrences are counted on the Ignored tab."
+
+msgid "Ignore selected logs"
+msgstr "Ignore selected logs"
+
+msgid "Logs identical to the records below (same level, source and message) are not saved to the database. Their repeats are only counted here. Delete a record to start saving such logs again."
+msgstr "Logs identical to the records below (same level, source and message) are not saved to the database. Their repeats are only counted here. Delete a record to start saving such logs again."
+
+msgid "Occurrences"
+msgstr "Occurrences"
+
+msgid "Last seen"
+msgstr "Last seen"
+
+msgid "Added"
+msgstr "Added"
+
+msgid "Stop ignoring"
+msgstr "Stop ignoring"
+
+msgid "No ignored records."
+msgstr "No ignored records."
+
+msgid "Added to ignored: %d"
+msgstr "Added to ignored: %d"
+
+msgid "Could not ignore the selected logs."
+msgstr "Could not ignore the selected logs."
+
+
+msgid "Removed from ignored"
+msgstr "Removed from ignored"
+
+msgid "Could not remove the record from the ignored list."
+msgstr "Could not remove the record from the ignored list."
+
+msgid "Remove the selected records from the ignored list? Identical logs will be saved to the database again."
+msgstr "Remove the selected records from the ignored list? Identical logs will be saved to the database again."
+
+msgid "Search ignored records…"
+msgstr "Search ignored records…"
+
+msgid "Select record %d"
+msgstr "Select record %d"
+
+msgid "Records: %d"
+msgstr "Records: %d"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "System default"
+msgstr "System default"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Delete"
+msgstr "Delete"
